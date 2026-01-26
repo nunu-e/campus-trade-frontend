@@ -92,13 +92,50 @@ const Register = () => {
 
     const { confirmPassword, ...registrationData } = formData;
 
-    const result = await register(registrationData);
+    try {
+      console.log("Registering with:", registrationData);
 
-    if (result.success) {
-      navigate("/login");
+      const response = await authAPI.register(registrationData);
+
+      if (response.data) {
+        toast.success(
+          "Registration successful! Please check your email for verification.",
+        );
+
+        // Store user data temporarily for verification
+        localStorage.setItem(
+          "tempUser",
+          JSON.stringify({
+            email: registrationData.email,
+            verificationCode: response.data.verificationCode,
+          }),
+        );
+
+        navigate("/verify-email");
+      }
+    } catch (error) {
+      console.error("Registration error details:", error);
+
+      let errorMessage = "Registration failed";
+
+      if (error.response) {
+        // Server responded with error
+        errorMessage = error.response.data?.message || "Server error";
+        console.error("Server error response:", error.response.data);
+      } else if (error.request) {
+        // Request made but no response
+        errorMessage = "Network error. Please check your connection.";
+        console.error("No response received:", error.request);
+      } else {
+        // Something else happened
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
