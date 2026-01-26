@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+// IMPORTANT: Remove '/api' from the base URL since Render is already at root
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL || "https://campus-trade-backend.onrender.com";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -28,7 +30,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Unauthorized - clear storage and redirect to login
       localStorage.removeItem("user");
       window.location.href = "/login";
     }
@@ -38,8 +39,8 @@ api.interceptors.response.use(
 
 // Auth API
 export const authAPI = {
+  register: (userData) => api.post("/api/auth/register", userData), // Now correct: /api/auth/register
   login: (credentials) => api.post("/api/auth/login", credentials),
-  register: (userData) => api.post("/api/auth/register", userData),
   getProfile: () => api.get("/api/auth/profile"),
   updateProfile: (profileData) => api.put("/api/auth/profile", profileData),
   verifyEmail: (code) => api.get(`/api/auth/verify/${code}`),
