@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  frontend:
+    build: ./frontend
+    container_name: campustrade-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - campustrade-network
+
+  backend:
+    build: ./backend
+    container_name: campustrade-backend
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://admin:password123@mongodb:27017/campustrade?authSource=admin
+      - JWT_SECRET=your_production_jwt_secret
+      - JWT_EXPIRE=30d
+      - APP_URL=http://localhost:3000
+    depends_on:
+      - mongodb
+    networks:
+      - campustrade-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: campustrade-mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password123
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - campustrade-network
+
+networks:
+  campustrade-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
