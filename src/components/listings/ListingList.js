@@ -24,11 +24,13 @@ const ListingList = ({ listings = [], loading, error, emptyMessage }) => {
 
   return (
     <Row xs={1} md={2} lg={3} xl={4} className="g-4">
-      {listings.map((listing) => (
-        <Col key={listing._id || Math.random()}>
-          <ListingItem listing={listing} />
-        </Col>
-      ))}
+      {listings.map((listing, idx) =>
+        listing ? (
+          <Col key={listing._id || listing.id || idx}>
+            <ListingItem listing={listing} />
+          </Col>
+        ) : null,
+      )}
     </Row>
   );
 };

@@ -77,6 +77,14 @@ const MyListings = () => {
     }).format(price);
   };
 
+  const normalizeImage = (img) => {
+    if (!img) return "/placeholder.png";
+    const s = String(img);
+    if (s.startsWith("http") || s.startsWith("/") || s.startsWith("data:"))
+      return s;
+    return "/placeholder.png";
+  };
+
   if (loading) {
     return (
       <div className="text-center py-5">
@@ -130,11 +138,22 @@ const MyListings = () => {
               {listings.map((listing) => (
                 <tr key={listing._id}>
                   <td>
-                    {listing.images?.[0] && (
+                    {listing.images?.[0] ? (
                       <img
-                        src={listing.images[0]}
+                        src={normalizeImage(listing.images[0])}
                         onError={(e) => (e.target.src = "/placeholder.png")}
                         alt={listing.title}
+                        style={{
+                          width: "50px",
+                          height: "50px",
+                          objectFit: "cover",
+                          borderRadius: "4px",
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src="/placeholder.png"
+                        alt="placeholder"
                         style={{
                           width: "50px",
                           height: "50px",
@@ -163,7 +182,11 @@ const MyListings = () => {
                     <Badge bg="info">{listing.category}</Badge>
                   </td>
                   <td>{getStatusBadge(listing.status)}</td>
-                  <td>{new Date(listing.createdAt).toLocaleDateString()}</td>
+                  <td>
+                    {isNaN(new Date(listing.createdAt).getTime())
+                      ? "-"
+                      : new Date(listing.createdAt).toLocaleDateString()}
+                  </td>
                   <td>
                     <Dropdown>
                       <Dropdown.Toggle

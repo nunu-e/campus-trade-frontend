@@ -92,7 +92,7 @@ const Header = () => {
                   <NavDropdown.Item as={Link} to="/profile">
                     Profile
                   </NavDropdown.Item>
-                  <NavDropdown.Item as={Link} to="/profile/listings">
+                  <NavDropdown.Item as={Link} to="/profile?tab=listings">
                     My Listings
                   </NavDropdown.Item>
                   <NavDropdown.Divider />

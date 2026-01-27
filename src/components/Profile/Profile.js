@@ -20,7 +20,7 @@ import {
   FaUniversity,
   FaUser,
 } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { reviewAPI, userAPI } from "../../services/api";
 import MyListings from "./MyListings";
@@ -31,7 +31,15 @@ const Profile = () => {
   const [reviews, setReviews] = useState([]);
   const [listingsCount, setListingsCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("profile");
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("tab") || "profile";
+    } catch (e) {
+      return "profile";
+    }
+  });
 
   useEffect(() => {
     if (user) {
@@ -40,6 +48,13 @@ const Profile = () => {
       fetchListingsCount();
     }
   }, [user]);
+
+  // react to changes in query param to switch tabs
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get("tab");
+    if (tab) setActiveTab(tab);
+  }, [location.search]);
 
   const fetchProfile = async () => {
     try {
@@ -162,7 +177,10 @@ const Profile = () => {
                       </p>
                       <p className="mb-2">
                         <FaCalendar className="me-2 text-muted" />
-                        Joined {new Date(user.createdAt).toLocaleDateString()}
+                        Joined{" "}
+                        {isNaN(new Date(user.createdAt).getTime())
+                          ? "-"
+                          : new Date(user.createdAt).toLocaleDateString()}
                       </p>
                     </Col>
                   </div>
@@ -348,7 +366,9 @@ const Profile = () => {
                             : "Transaction review"}
                         </small>
                         <small className="text-muted">
-                          {new Date(review.createdAt).toLocaleDateString()}
+                          {isNaN(new Date(review.createdAt).getTime())
+                            ? "-"
+                            : new Date(review.createdAt).toLocaleDateString()}
                         </small>
                       </div>
                     </Card.Body>

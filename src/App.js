@@ -12,8 +12,11 @@ import { MessageProvider } from "./context/MessageContext";
 import VerifyEmail from "./components/auth/VerifyEmail";
 import Footer from "./components/common/Footer";
 import Header from "./components/common/Header";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 // Pages
+import ListingForm from "./components/listings/ListingForm";
 import TransactionDetail from "./components/transactions/TransactionDetail";
 import AdminPage from "./pages/AdminPage";
 import HomePage from "./pages/HomePage";
@@ -70,6 +73,14 @@ function App() {
                 <Route path="/marketplace" element={<MarketplacePage />} />
                 <Route path="/listing/:id" element={<ListingPage />} />
                 <Route path="/verify/:code" element={<VerifyEmail />} />
+                <Route
+                  path="/forgot-password"
+                  element={<ForgotPasswordPage />}
+                />
+                <Route
+                  path="/reset-password/:token"
+                  element={<ResetPasswordPage />}
+                />
 
                 <Route
                   path="/transactions/:id"
@@ -95,6 +106,25 @@ function App() {
                     <ProtectedRoute>
                       <ProfilePage />
                     </ProtectedRoute>
+                  }
+                />
+
+                {/* Listing create / edit under profile - require verified user */}
+                <Route
+                  path="/profile/listings/new"
+                  element={
+                    <VerifiedRoute>
+                      <ListingForm />
+                    </VerifiedRoute>
+                  }
+                />
+
+                <Route
+                  path="/profile/listings/edit/:id"
+                  element={
+                    <VerifiedRoute>
+                      <ListingForm />
+                    </VerifiedRoute>
                   }
                 />
 

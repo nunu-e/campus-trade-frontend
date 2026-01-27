@@ -30,7 +30,8 @@ const ListingDetail = () => {
   const [reserving, setReserving] = useState(false);
 
   useEffect(() => {
-    fetchListing();
+    // guard: only fetch when id looks valid
+    if (id && id !== "new") fetchListing();
   }, [id]);
 
   const fetchListing = async () => {
@@ -134,6 +135,14 @@ const ListingDetail = () => {
     }).format(price);
   };
 
+  const normalizeImage = (img) => {
+    if (!img) return "/logo192.png";
+    const s = String(img);
+    if (s.startsWith("http") || s.startsWith("/") || s.startsWith("data:"))
+      return s;
+    return "/logo192.png";
+  };
+
   const getStatusBadge = () => {
     const variants = {
       Available: "success",
@@ -176,7 +185,7 @@ const ListingDetail = () => {
           <Card className="shadow-sm">
             <Card.Body className="p-0 position-relative">
               <Image
-                src={listing.images?.[selectedImage] || "/placeholder.jpg"}
+                src={normalizeImage(listing.images?.[selectedImage])}
                 alt={listing.title}
                 className="img-fluid rounded-top"
                 style={{ width: "100%", height: "400px", objectFit: "cover" }}
@@ -190,7 +199,7 @@ const ListingDetail = () => {
                     {listing.images.map((image, index) => (
                       <Col xs={3} key={index}>
                         <Image
-                          src={image}
+                          src={normalizeImage(image)}
                           alt={`${listing.title} - ${index + 1}`}
                           className={`img-thumbnail cursor-pointer ${selectedImage === index ? "border-primary" : ""}`}
                           onClick={() => setSelectedImage(index)}
@@ -281,8 +290,14 @@ const ListingDetail = () => {
             </Card.Body>
 
             <Card.Footer className="bg-white text-muted small">
-              Listed on {new Date(listing.createdAt).toLocaleDateString()} •
-              Last updated {new Date(listing.updatedAt).toLocaleDateString()}
+              Listed on{" "}
+              {isNaN(new Date(listing.createdAt).getTime())
+                ? "-"
+                : new Date(listing.createdAt).toLocaleDateString()}{" "}
+              • Last updated{" "}
+              {isNaN(new Date(listing.updatedAt).getTime())
+                ? "-"
+                : new Date(listing.updatedAt).toLocaleDateString()}
             </Card.Footer>
           </Card>
         </Col>

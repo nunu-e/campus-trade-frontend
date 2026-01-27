@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Alert, Card, Col, Container, Row, Spinner } from "react-bootstrap";
 import { FaComments } from "react-icons/fa";
 import ChatWindow from "../components/messages/ChatWindow";
@@ -7,14 +7,8 @@ import { useAuth } from "../context/AuthContext";
 
 const MessagesPage = () => {
   const [selectedConversation, setSelectedConversation] = useState(null);
+  const [loading, setLoading] = useState(false);
   const { isVerified } = useAuth();
-
-  useEffect(() => {
-    // Check if user is verified
-    if (!isVerified) {
-      // Handle unverified users
-    }
-  }, [isVerified]);
 
   const handleSelectConversation = (conversation) => {
     setSelectedConversation({

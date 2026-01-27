@@ -26,10 +26,18 @@ const TransactionsPage = () => {
   const fetchTransactions = async () => {
     try {
       setLoading(true);
-      const response = await transactionAPI.getMyTransactions();
+      const data = await transactionAPI.getMyTransactions();
 
-      if (response.data && Array.isArray(response.data)) {
-        let filtered = response.data;
+      // transactionAPI returns response.data (array) or wrapped object
+      let items = [];
+      if (Array.isArray(data)) {
+        items = data;
+      } else if (data && Array.isArray(data.data)) {
+        items = data.data;
+      }
+
+      if (items.length >= 0) {
+        let filtered = items;
         if (activeTab !== "all") {
           filtered = filtered.filter((t) => t.status === activeTab);
         }

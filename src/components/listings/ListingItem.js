@@ -14,6 +14,14 @@ const ListingItem = ({ listing }) => {
     }).format(price);
   };
 
+  const normalizeImage = (img) => {
+    if (!img) return "/logo192.png";
+    const s = String(img);
+    if (s.startsWith("http") || s.startsWith("/") || s.startsWith("data:"))
+      return s;
+    return "/logo192.png";
+  };
+
   const getStatusBadge = (status) => {
     const variants = {
       Available: "success",
@@ -31,9 +39,7 @@ const ListingItem = ({ listing }) => {
   };
 
   const firstImage =
-    listing.images && listing.images.length > 0
-      ? listing.images[0]
-      : "/placeholder.jpg";
+    listing.images && listing.images.length > 0 ? listing.images[0] : null;
 
   const sellerName =
     listing.sellerId && listing.sellerId.name
@@ -45,7 +51,7 @@ const ListingItem = ({ listing }) => {
       <div className="position-relative">
         <Card.Img
           variant="top"
-          src={firstImage}
+          src={normalizeImage(firstImage)}
           alt={listing.title || "Listing"}
           style={{ height: "200px", objectFit: "cover" }}
         />
@@ -113,7 +119,10 @@ const ListingItem = ({ listing }) => {
 
       <Card.Footer className="bg-white border-top-0">
         <small className="text-muted">
-          Listed {new Date(listing.createdAt).toLocaleDateString() || "-"}
+          Listed{" "}
+          {isNaN(new Date(listing.createdAt).getTime())
+            ? "-"
+            : new Date(listing.createdAt).toLocaleDateString()}
         </small>
       </Card.Footer>
     </Card>

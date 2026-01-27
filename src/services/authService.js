@@ -5,10 +5,12 @@ export const authService = {
     try {
       const response = await api.post("/api/auth/login", { email, password });
 
-      if (response.data.token) {
-        localStorage.setItem("user", JSON.stringify(response.data));
+      // Backend returns { success, message, data: { ...user, token } }
+      const payload = response.data?.data || response.data;
+      if (payload && payload.token) {
+        localStorage.setItem("user", JSON.stringify(payload));
         api.defaults.headers.common["Authorization"] =
-          `Bearer ${response.data.token}`;
+          `Bearer ${payload.token}`;
       }
 
       return response.data;

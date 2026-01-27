@@ -49,8 +49,7 @@ const HomePage = () => {
     {
       icon: <FaShieldAlt size={40} />,
       title: "Verified Users",
-      description:
-        "All users are verified with their official AAU email address (@aau.edu.et).",
+      description: "All users are verified.",
     },
     {
       icon: <FaUserFriends size={40} />,
@@ -83,7 +82,7 @@ const HomePage = () => {
                 Welcome to <span className="text-warning">CampusTrade</span>
               </h1>
               <p className="lead mb-4">
-                AAU's official student-to-student marketplace. Buy, sell, rent,
+                AAU's official student to student marketplace. Buy, sell, rent,
                 and exchange goods and services within our secure campus
                 community.
               </p>
@@ -134,7 +133,7 @@ const HomePage = () => {
               </div>
               <div className="mt-4">
                 <Badge bg="light" text="dark" className="me-2 p-2">
-                  <FaShieldAlt className="me-1" /> AAU Verified Only
+                  <FaShieldAlt className="me-1" /> AAU Students Only
                 </Badge>
                 <Badge bg="light" text="dark" className="me-2 p-2">
                   <FaHandshake className="me-1" /> Secure Transactions
@@ -154,10 +153,6 @@ const HomePage = () => {
                   specifically for Addis Ababa University students.
                 </p>
                 <ul className="list-unstyled">
-                  <li className="mb-2">
-                    <FaShieldAlt className="text-success me-2" /> Secure
-                    @aau.edu.et email verification
-                  </li>
                   <li className="mb-2">
                     <FaUserFriends className="text-primary me-2" /> Connect with
                     fellow AAU students

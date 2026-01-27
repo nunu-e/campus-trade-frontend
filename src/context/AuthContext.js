@@ -1,6 +1,6 @@
-import axios from "axios";
 import { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import api from "../services/api";
 
 const AuthContext = createContext({});
 
@@ -15,34 +15,34 @@ export const AuthProvider = ({ children }) => {
     // Check for stored user on mount
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setupAxiosHeaders(JSON.parse(storedUser).token);
+      const parsed = JSON.parse(storedUser);
+      setUser(parsed);
+      setupApiHeaders(parsed.token);
     }
     setLoading(false);
   }, []);
 
-  const setupAxiosHeaders = (token) => {
+  const setupApiHeaders = (token) => {
     if (token) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     } else {
-      delete axios.defaults.headers.common["Authorization"];
+      delete api.defaults.headers.common["Authorization"];
     }
   };
 
   const register = async (userData) => {
     try {
       setLoading(true);
-      const response = await axios.post("/api/auth/register", userData);
+      const response = await api.post("/api/auth/register", userData);
 
-      if (response.data) {
-        const userObj = {
-          ...response.data,
-          token: response.data.token,
-        };
+      if (response.data && response.data.data) {
+        const userObj = response.data.data;
+        // ensure token is top-level on stored object
+        userObj.token = userObj.token || response.data.data.token;
 
         localStorage.setItem("user", JSON.stringify(userObj));
         setUser(userObj);
-        setupAxiosHeaders(userObj.token);
+        setupApiHeaders(userObj.token);
 
         toast.success(
           "Registration successful! Please check your email for verification.",
@@ -62,17 +62,15 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       setLoading(true);
-      const response = await axios.post("/api/auth/login", { email, password });
+      const response = await api.post("/api/auth/login", { email, password });
 
-      if (response.data) {
-        const userObj = {
-          ...response.data,
-          token: response.data.token,
-        };
+      if (response.data && response.data.data) {
+        const userObj = response.data.data;
+        userObj.token = userObj.token || response.data.data.token;
 
         localStorage.setItem("user", JSON.stringify(userObj));
         setUser(userObj);
-        setupAxiosHeaders(userObj.token);
+        setupApiHeaders(userObj.token);
 
         toast.success("Login successful!");
         return { success: true };
@@ -90,17 +88,17 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem("user");
     setUser(null);
-    setupAxiosHeaders(null);
+    setupApiHeaders(null);
     toast.info("Logged out successfully");
   };
 
   const updateProfile = async (profileData) => {
     try {
       setLoading(true);
-      const response = await axios.put("/api/auth/profile", profileData);
+      const response = await api.put("/api/auth/profile", profileData);
 
-      if (response.data) {
-        const updatedUser = { ...user, ...response.data };
+      if (response.data && response.data.data) {
+        const updatedUser = { ...user, ...response.data.data };
         localStorage.setItem("user", JSON.stringify(updatedUser));
         setUser(updatedUser);
 
@@ -121,9 +119,9 @@ export const AuthProvider = ({ children }) => {
   const verifyEmail = async (code) => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/auth/verify/${code}`);
+      const response = await api.get(`/api/auth/verify/${code}`);
 
-      if (response.data.success) {
+      if (response.data && response.data.success) {
         // Update user verification status
         if (user && !user.isVerified) {
           const updatedUser = { ...user, isVerified: true };
@@ -133,8 +131,8 @@ export const AuthProvider = ({ children }) => {
         }
         return { success: true };
       } else {
-        toast.error(response.data.message || "Verification failed");
-        return { success: false, error: response.data.message };
+        toast.error(response.data?.message || "Verification failed");
+        return { success: false, error: response.data?.message };
       }
     } catch (error) {
       const message = error.response?.data?.message || "Verification failed";
@@ -156,7 +154,7 @@ export const AuthProvider = ({ children }) => {
     verifyEmail,
     isAuthenticated: !!user,
     isAdmin: user?.role === "admin",
-    isVerified: user?.isVerified,
+    isVerified: user?.isVerified === true,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
