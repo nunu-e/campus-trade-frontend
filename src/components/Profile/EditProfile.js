@@ -97,6 +97,12 @@ const EditProfile = () => {
         navigate("/profile");
       }, 1500);
     }
+    if (!result.success) {
+      setErrors({ form: result.error || "Failed to update profile" });
+      {
+        errors.form && <Alert variant="danger">{errors.form}</Alert>;
+      }
+    }
 
     setLoading(false);
   };

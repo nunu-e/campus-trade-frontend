@@ -5,14 +5,16 @@ import {
   Routes,
 } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { MessageProvider } from "./context/MessageContext";
 
 // Components
+import VerifyEmail from "./components/auth/VerifyEmail";
 import Footer from "./components/common/Footer";
 import Header from "./components/common/Header";
 
 // Pages
+import TransactionDetail from "./components/transactions/TransactionDetail";
 import AdminPage from "./pages/AdminPage";
 import HomePage from "./pages/HomePage";
 import ListingPage from "./pages/ListingPage";
@@ -23,30 +25,31 @@ import ProfilePage from "./pages/ProfilePage";
 import RegisterPage from "./pages/RegisterPage";
 import TransactionsPage from "./pages/TransactionsPage";
 
-// Protected Route Component
-const ProtectedRoute = ({ children, requireAdmin = false }) => {
-  const user = JSON.parse(localStorage.getItem("user"));
+// ✅ Protected Route (auth only)
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
 
-  if (!user || !user.token) {
-    return <Navigate to="/login" />;
-  }
+  if (loading) return null;
 
-  if (requireAdmin && user.role !== "admin") {
-    return <Navigate to="/" />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
 
   return children;
 };
 
+// ✅ Verified Route (auth + email verified)
 const VerifiedRoute = ({ children }) => {
-  const user = JSON.parse(localStorage.getItem("user"));
+  const { isAuthenticated, isVerified, loading } = useAuth();
 
-  if (!user || !user.token) {
-    return <Navigate to="/login" />;
+  if (loading) return null;
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
 
-  if (!user.isVerified) {
-    return <Navigate to="/verify-email" />;
+  if (!isVerified) {
+    return <Navigate to="/profile" replace />;
   }
 
   return children;
@@ -66,6 +69,16 @@ function App() {
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/marketplace" element={<MarketplacePage />} />
                 <Route path="/listing/:id" element={<ListingPage />} />
+                <Route path="/verify/:code" element={<VerifyEmail />} />
+
+                <Route
+                  path="/transactions/:id"
+                  element={
+                    <VerifiedRoute>
+                      <TransactionDetail />
+                    </VerifiedRoute>
+                  }
+                />
 
                 <Route
                   path="/messages"
@@ -94,10 +107,11 @@ function App() {
                   }
                 />
 
+                {/* ✅ AdminPage handles its own protection */}
                 <Route
                   path="/admin"
                   element={
-                    <ProtectedRoute requireAdmin={true}>
+                    <ProtectedRoute>
                       <AdminPage />
                     </ProtectedRoute>
                   }

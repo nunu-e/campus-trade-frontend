@@ -3,7 +3,10 @@ import { FaEye, FaHeart, FaMapMarkerAlt, FaUser } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
 const ListingItem = ({ listing }) => {
+  if (!listing) return null; // safety check
+
   const formatPrice = (price) => {
+    if (!price && price !== 0) return "-";
     return new Intl.NumberFormat("et-ET", {
       style: "currency",
       currency: "ETB",
@@ -17,28 +20,33 @@ const ListingItem = ({ listing }) => {
       Reserved: "warning",
       Sold: "secondary",
     };
-
     return (
       <Badge
-        bg={variants[status]}
+        bg={variants[status] || "secondary"}
         className="position-absolute top-0 end-0 m-2"
       >
-        {status}
+        {status || "N/A"}
       </Badge>
     );
   };
+
+  const firstImage =
+    listing.images && listing.images.length > 0
+      ? listing.images[0]
+      : "/placeholder.jpg";
+
+  const sellerName =
+    listing.sellerId && listing.sellerId.name
+      ? listing.sellerId.name.split(" ")[0]
+      : "Unknown";
 
   return (
     <Card className="h-100 shadow-sm hover-shadow">
       <div className="position-relative">
         <Card.Img
           variant="top"
-          src={
-            listing.images && listing.images.length > 0
-              ? listing.images[0]
-              : "/placeholder.jpg"
-          }
-          alt={listing.title}
+          src={firstImage}
+          alt={listing.title || "Listing"}
           style={{ height: "200px", objectFit: "cover" }}
         />
         {getStatusBadge(listing.status)}
@@ -52,7 +60,7 @@ const ListingItem = ({ listing }) => {
 
       <Card.Body className="d-flex flex-column">
         <Card.Title className="h6 mb-2 text-truncate" title={listing.title}>
-          {listing.title}
+          {listing.title || "Untitled"}
         </Card.Title>
 
         <Card.Subtitle className="mb-2 text-primary fw-bold">
@@ -60,24 +68,24 @@ const ListingItem = ({ listing }) => {
         </Card.Subtitle>
 
         <Card.Text className="small text-muted mb-3 flex-grow-1">
-          {listing.description.length > 100
-            ? `${listing.description.substring(0, 100)}...`
-            : listing.description}
+          {listing.description
+            ? listing.description.length > 100
+              ? `${listing.description.substring(0, 100)}...`
+              : listing.description
+            : "No description"}
         </Card.Text>
 
         <div className="mt-auto">
           <div className="d-flex justify-content-between align-items-center mb-2">
             <div className="d-flex align-items-center small text-muted">
               <FaMapMarkerAlt className="me-1" />
-              <span>{listing.location}</span>
+              <span>{listing.location || "Unknown"}</span>
             </div>
 
-            {listing.sellerId?.name && (
-              <div className="d-flex align-items-center small text-muted">
-                <FaUser className="me-1" />
-                <span>{listing.sellerId.name.split(" ")[0]}</span>
-              </div>
-            )}
+            <div className="d-flex align-items-center small text-muted">
+              <FaUser className="me-1" />
+              <span>{sellerName}</span>
+            </div>
           </div>
 
           <div className="d-flex gap-2">
@@ -105,7 +113,7 @@ const ListingItem = ({ listing }) => {
 
       <Card.Footer className="bg-white border-top-0">
         <small className="text-muted">
-          Listed {new Date(listing.createdAt).toLocaleDateString()}
+          Listed {new Date(listing.createdAt).toLocaleDateString() || "-"}
         </small>
       </Card.Footer>
     </Card>

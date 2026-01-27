@@ -4,7 +4,7 @@ import ListingDetail from "../components/listings/ListingDetail";
 const ListingPage = () => {
   const { id } = useParams();
 
-  return <ListingDetail />;
+  return <ListingDetail listingId={id} />;
 };
 
 export default ListingPage;

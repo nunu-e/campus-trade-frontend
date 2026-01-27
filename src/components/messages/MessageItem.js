@@ -61,7 +61,7 @@ const MessageItem = ({ message, isOwnMessage, showDate = false }) => {
 
           {!isOwnMessage && (
             <div className="mt-1 small text-muted">
-              {message.senderId?.name}
+              {message.senderId?.name || "User"}
             </div>
           )}
         </div>

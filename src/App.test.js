@@ -8,7 +8,6 @@ test("renders CampusTrade header", () => {
 });
 
 test("renders login link when not authenticated", () => {
-  // Clear any existing user data
   localStorage.removeItem("user");
   render(<App />);
   const loginLink = screen.getByText(/Login/i);

@@ -119,4 +119,5 @@ const VerifyEmail = () => {
   );
 };
 
+// Make sure to export as default
 export default VerifyEmail;

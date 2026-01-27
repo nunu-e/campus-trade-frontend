@@ -11,15 +11,16 @@ const ConversationList = ({ onSelectConversation, selectedUserId }) => {
 
   useEffect(() => {
     refreshConversations();
-  }, []);
+  }, [refreshConversations]);
 
   useEffect(() => {
     if (searchTerm) {
-      const filtered = conversations.filter(
-        (conv) =>
-          conv.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          conv.lastMessage?.toLowerCase().includes(searchTerm.toLowerCase()),
+      const filtered = conversations.filter((conv) =>
+        `${conv.userName || ""} ${conv.lastMessage || ""}`
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()),
       );
+
       setFilteredConversations(filtered);
     } else {
       setFilteredConversations(conversations);

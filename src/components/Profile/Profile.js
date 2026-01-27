@@ -29,6 +29,7 @@ const Profile = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [listingsCount, setListingsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
 
@@ -36,6 +37,7 @@ const Profile = () => {
     if (user) {
       fetchProfile();
       fetchReviews();
+      fetchListingsCount();
     }
   }, [user]);
 
@@ -53,15 +55,31 @@ const Profile = () => {
   const fetchReviews = async () => {
     try {
       const response = await reviewAPI.getForUser(user._id);
-      setReviews(response.data);
+      setReviews(response.data || []);
     } catch (error) {
       console.error("Error fetching reviews:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchListingsCount = async () => {
+    try {
+      const response = await userAPI.getUserListings(user._id);
+      setListingsCount(response.data?.length || 0);
+    } catch (error) {
+      console.error("Error fetching listings count:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const calculateAverageRating = () => {
-    if (reviews.length === 0) return 0;
-    const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+    if (!reviews || reviews.length === 0) return 0;
+    const total = reviews.reduce(
+      (sum, review) => sum + (review.rating || 0),
+      0,
+    );
     return (total / reviews.length).toFixed(1);
   };
 
@@ -174,7 +192,7 @@ const Profile = () => {
               <div className="text-primary mb-2">
                 <FaShoppingCart size={32} />
               </div>
-              <h3 className="mb-1">{profile?.totalListings || 0}</h3>
+              <h3 className="mb-1">{listingsCount}</h3>
               <p className="text-muted mb-0">Total Listings</p>
             </Card.Body>
           </Card>
@@ -295,7 +313,9 @@ const Profile = () => {
                     <Card.Body>
                       <div className="d-flex justify-content-between align-items-start mb-2">
                         <div>
-                          <h6 className="mb-0">{review.reviewerId?.name}</h6>
+                          <h6 className="mb-0">
+                            {review.reviewerId?.name || "Anonymous"}
+                          </h6>
                           <small className="text-muted">
                             {review.type === "BuyerToSeller"
                               ? "Buyer"
@@ -317,11 +337,15 @@ const Profile = () => {
                         </div>
                       </div>
 
-                      <p className="mb-2">{review.comment}</p>
+                      {review.comment && (
+                        <p className="mb-2">{review.comment}</p>
+                      )}
 
                       <div className="d-flex justify-content-between align-items-center">
                         <small className="text-muted">
-                          For: {review.listingId?.title}
+                          {review.listingId?.title
+                            ? `For: ${review.listingId.title}`
+                            : "Transaction review"}
                         </small>
                         <small className="text-muted">
                           {new Date(review.createdAt).toLocaleDateString()}

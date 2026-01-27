@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Badge, Button, Card, Col, Container, Row } from "react-bootstrap";
 import {
   FaComment,
@@ -5,13 +6,32 @@ import {
   FaSearch,
   FaShieldAlt,
   FaShoppingCart,
+  FaUniversity,
   FaUserFriends,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { listingAPI } from "../services/api";
 
 const HomePage = () => {
   const { isAuthenticated, user } = useAuth();
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const response = await listingAPI.getAll({ limit: 1 });
+      setStats({ activeListings: response.data.total || 0 });
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const features = [
     {
@@ -50,15 +70,6 @@ const HomePage = () => {
       description:
         "Communicate safely within the platform without sharing personal contact details.",
     },
-  ];
-
-  const categories = [
-    { name: "Textbooks", count: 45, color: "primary" },
-    { name: "Electronics", count: 32, color: "success" },
-    { name: "Dorm Essentials", count: 28, color: "info" },
-    { name: "Tutoring", count: 15, color: "warning" },
-    { name: "Clothing", count: 24, color: "danger" },
-    { name: "Other", count: 18, color: "secondary" },
   ];
 
   return (
@@ -134,12 +145,29 @@ const HomePage = () => {
               </div>
             </Col>
             <Col lg={6} className="mt-4 mt-lg-0">
-              <img
-                src="/marketplace-hero.svg"
-                alt="CampusTrade Marketplace"
-                className="img-fluid rounded shadow"
-                style={{ maxHeight: "400px" }}
-              />
+              <div className="bg-white text-dark rounded p-4 shadow">
+                <h4 className="text-primary mb-3">
+                  <FaUniversity className="me-2" /> Exclusively for AAU Students
+                </h4>
+                <p className="mb-3">
+                  CampusTrade is a verified marketplace platform designed
+                  specifically for Addis Ababa University students.
+                </p>
+                <ul className="list-unstyled">
+                  <li className="mb-2">
+                    <FaShieldAlt className="text-success me-2" /> Secure
+                    @aau.edu.et email verification
+                  </li>
+                  <li className="mb-2">
+                    <FaUserFriends className="text-primary me-2" /> Connect with
+                    fellow AAU students
+                  </li>
+                  <li>
+                    <FaHandshake className="text-warning me-2" /> Safe and
+                    reliable transactions
+                  </li>
+                </ul>
+              </div>
             </Col>
           </Row>
         </Container>
@@ -165,33 +193,11 @@ const HomePage = () => {
         </Row>
       </Container>
 
-      {/* Categories Section */}
-      <div className="bg-light py-5">
-        <Container>
-          <h2 className="text-center mb-5">Popular Categories</h2>
-          <Row className="g-3">
-            {categories.map((category, index) => (
-              <Col xs={6} md={4} lg={2} key={index}>
-                <Card className="text-center shadow-sm h-100">
-                  <Card.Body className="d-flex flex-column justify-content-center">
-                    <h5 className={`text-${category.color}`}>
-                      {category.name}
-                    </h5>
-                    <p className="text-muted mb-0">{category.count} items</p>
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        </Container>
-      </div>
-
       {/* CTA Section */}
       <Container className="py-5 text-center">
         <h2 className="mb-4">Ready to Get Started?</h2>
         <p className="lead mb-4">
-          Join thousands of AAU students who are already buying, selling, and
-          trading on CampusTrade.
+          Join the AAU student community and start trading on CampusTrade.
         </p>
         {isAuthenticated ? (
           <div>
@@ -230,35 +236,35 @@ const HomePage = () => {
               size="lg"
               className="px-5"
             >
-              Browse as Guest
+              Browse Listings
             </Button>
           </div>
         )}
       </Container>
 
       {/* Stats Section */}
-      <div className="bg-dark text-white py-4">
-        <Container>
-          <Row className="text-center">
-            <Col md={3} className="mb-3 mb-md-0">
-              <h3 className="fw-bold text-warning">1,200+</h3>
-              <p className="mb-0">Active Students</p>
-            </Col>
-            <Col md={3} className="mb-3 mb-md-0">
-              <h3 className="fw-bold text-warning">500+</h3>
-              <p className="mb-0">Active Listings</p>
-            </Col>
-            <Col md={3} className="mb-3 mb-md-0">
-              <h3 className="fw-bold text-warning">300+</h3>
-              <p className="mb-0">Completed Transactions</p>
-            </Col>
-            <Col md={3}>
-              <h3 className="fw-bold text-warning">4.8/5</h3>
-              <p className="mb-0">Average User Rating</p>
-            </Col>
-          </Row>
-        </Container>
-      </div>
+      {!loading && stats && stats.activeListings > 0 && (
+        <div className="bg-dark text-white py-4">
+          <Container>
+            <Row className="text-center">
+              <Col md={4} className="mb-3 mb-md-0">
+                <h3 className="fw-bold text-warning">
+                  {stats.activeListings}+
+                </h3>
+                <p className="mb-0">Active Listings</p>
+              </Col>
+              <Col md={4} className="mb-3 mb-md-0">
+                <h3 className="fw-bold text-warning">AAU</h3>
+                <p className="mb-0">Verified Students Only</p>
+              </Col>
+              <Col md={4}>
+                <h3 className="fw-bold text-warning">100%</h3>
+                <p className="mb-0">Secure Platform</p>
+              </Col>
+            </Row>
+          </Container>
+        </div>
+      )}
     </>
   );
 };

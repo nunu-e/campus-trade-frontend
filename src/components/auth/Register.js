@@ -16,6 +16,7 @@ const Register = () => {
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -38,9 +39,12 @@ const Register = () => {
     const newErrors = {};
 
     if (!formData.name.trim()) newErrors.name = "Name is required";
+    else if (formData.name.length < 2)
+      newErrors.name = "Name must be at least 2 characters";
+
     if (!formData.email.trim()) newErrors.email = "Email is required";
-    else if (!formData.email.endsWith("@aau.edu.et"))
-      newErrors.email = "Please use your AAU email address";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+      newErrors.email = "Please enter a valid email";
 
     if (!formData.password) newErrors.password = "Password is required";
     else if (formData.password.length < 6)
@@ -70,69 +74,55 @@ const Register = () => {
   };
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
-    // Clear error for this field
-    if (errors[e.target.name]) {
+
+    if (errors[name]) {
       setErrors({
         ...errors,
-        [e.target.name]: "",
+        [name]: "",
       });
     }
+
+    if (apiError) setApiError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setApiError("");
 
     if (!validateForm()) return;
 
     setLoading(true);
 
-    const { confirmPassword, ...registrationData } = formData;
+    const registrationData = {
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      phoneNumber: formData.phoneNumber || "",
+      department: formData.department,
+      studentID: formData.studentID,
+    };
 
     try {
-      console.log("Registering with:", registrationData);
+      const result = await register(registrationData);
 
-      const response = await authAPI.register(registrationData);
-
-      if (response.data) {
-        toast.success(
-          "Registration successful! Please check your email for verification.",
+      if (result.success) {
+        // Show success message and redirect
+        alert(
+          result.message ||
+            "Registration successful! Please check your email for verification.",
         );
-
-        // Store user data temporarily for verification
-        localStorage.setItem(
-          "tempUser",
-          JSON.stringify({
-            email: registrationData.email,
-            verificationCode: response.data.verificationCode,
-          }),
-        );
-
-        navigate("/verify-email");
+        navigate("/login");
+      } else {
+        setApiError(result.error || "Registration failed");
       }
     } catch (error) {
-      console.error("Registration error details:", error);
-
-      let errorMessage = "Registration failed";
-
-      if (error.response) {
-        // Server responded with error
-        errorMessage = error.response.data?.message || "Server error";
-        console.error("Server error response:", error.response.data);
-      } else if (error.request) {
-        // Request made but no response
-        errorMessage = "Network error. Please check your connection.";
-        console.error("No response received:", error.request);
-      } else {
-        // Something else happened
-        errorMessage = error.message;
-      }
-
-      toast.error(errorMessage);
-      setError(errorMessage);
+      setApiError("An error occurred during registration");
+      console.error("Registration error:", error);
     } finally {
       setLoading(false);
     }
@@ -144,13 +134,17 @@ const Register = () => {
         <div className="col-md-8 col-lg-6">
           <Card className="shadow">
             <Card.Header className="bg-primary text-white">
-              <h4 className="mb-0">Register for CampusTrade</h4>
-              <small className="text-light">Exclusively for AAU Students</small>
+              <h4 className="mb-0">Create CampusTrade Account</h4>
+              <small className="text-light">
+                Join our student marketplace community
+              </small>
             </Card.Header>
             <Card.Body>
+              {apiError && <Alert variant="danger">{apiError}</Alert>}
+
               <Alert variant="info">
-                <strong>Note:</strong> You must use your official AAU email
-                address (@aau.edu.et) to register.
+                <strong>Important:</strong> A verification link will be sent to
+                your email. You must verify your email before you can login.
               </Alert>
 
               <Form onSubmit={handleSubmit}>
@@ -170,21 +164,21 @@ const Register = () => {
                 </Form.Group>
 
                 <Form.Group className="mb-3">
-                  <Form.Label>AAU Email Address *</Form.Label>
+                  <Form.Label>Email Address *</Form.Label>
                   <Form.Control
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
                     isInvalid={!!errors.email}
-                    placeholder="username@aau.edu.et"
+                    placeholder="your.email@example.com"
                   />
-                  <Form.Text className="text-muted">
-                    Must end with @aau.edu.et
-                  </Form.Text>
                   <Form.Control.Feedback type="invalid">
                     {errors.email}
                   </Form.Control.Feedback>
+                  <Form.Text className="text-muted">
+                    We'll send a verification link to this email
+                  </Form.Text>
                 </Form.Group>
 
                 <Form.Group className="mb-3">
@@ -230,6 +224,9 @@ const Register = () => {
                   <Form.Control.Feedback type="invalid">
                     {errors.phoneNumber}
                   </Form.Control.Feedback>
+                  <Form.Text className="text-muted">
+                    For buyer/seller communication
+                  </Form.Text>
                 </Form.Group>
 
                 <Form.Group className="mb-3">
@@ -274,7 +271,7 @@ const Register = () => {
                   className="w-100 mb-3"
                   disabled={loading}
                 >
-                  {loading ? "Registering..." : "Register"}
+                  {loading ? "Creating Account..." : "Create Account"}
                 </Button>
 
                 <div className="text-center">

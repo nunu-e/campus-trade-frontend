@@ -1,21 +1,35 @@
-import { Alert, Col, Row } from "react-bootstrap";
+import { Alert, Col, Row, Spinner } from "react-bootstrap";
+import { useAuth } from "../../context/AuthContext";
 import TransactionItem from "./TransactionItem";
 
-const TransactionList = ({ transactions, loading, error, emptyMessage }) => {
+const TransactionList = ({
+  transactions = [],
+  loading,
+  error,
+  emptyMessage,
+}) => {
+  const { user } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="text-center py-4">
+        <Spinner animation="border" />
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <Alert variant="danger" className="text-center">
-        <h5>Error Loading Transactions</h5>
-        <p>{error}</p>
+        {error}
       </Alert>
     );
   }
 
-  if (!loading && transactions.length === 0) {
+  if (transactions.length === 0) {
     return (
       <Alert variant="info" className="text-center">
-        <h5>No Transactions Yet</h5>
-        <p>{emptyMessage || "You haven't made any transactions yet."}</p>
+        {emptyMessage || "No transactions yet"}
       </Alert>
     );
   }
@@ -24,7 +38,10 @@ const TransactionList = ({ transactions, loading, error, emptyMessage }) => {
     <Row xs={1} md={2} lg={3} className="g-4">
       {transactions.map((transaction) => (
         <Col key={transaction._id}>
-          <TransactionItem transaction={transaction} />
+          <TransactionItem
+            transaction={transaction}
+            currentUserId={user?._id}
+          />
         </Col>
       ))}
     </Row>

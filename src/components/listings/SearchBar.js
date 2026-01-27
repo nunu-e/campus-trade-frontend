@@ -28,18 +28,19 @@ const SearchBar = ({
 
   const handleSearch = (e) => {
     e.preventDefault();
-    onSearch({
-      q: searchTerm,
-      category: category || undefined,
-      location: location || undefined,
-    });
+    onSearch &&
+      onSearch({
+        q: searchTerm.trim() || undefined,
+        category: category || undefined,
+        location: location || undefined,
+      });
   };
 
   const handleClear = () => {
     setSearchTerm("");
     setCategory("");
     setLocation("");
-    onSearch({});
+    onSearch && onSearch({});
   };
 
   const hasFilters = category || location;
@@ -71,6 +72,7 @@ const SearchBar = ({
           </Dropdown.Toggle>
 
           <Dropdown.Menu className="p-3" style={{ width: "300px" }}>
+            {/* Category Filter */}
             <div className="mb-3">
               <label className="form-label small text-muted mb-2">
                 Category
@@ -80,7 +82,11 @@ const SearchBar = ({
                   <button
                     key={cat.value}
                     type="button"
-                    className={`btn btn-sm ${category === cat.value ? "btn-primary" : "btn-outline-primary"}`}
+                    className={`btn btn-sm ${
+                      category === cat.value
+                        ? "btn-primary"
+                        : "btn-outline-primary"
+                    }`}
                     onClick={() => setCategory(cat.value)}
                   >
                     {cat.label}
@@ -89,6 +95,7 @@ const SearchBar = ({
               </div>
             </div>
 
+            {/* Location Filter */}
             <div className="mb-3">
               <label className="form-label small text-muted mb-2">
                 Location
@@ -98,7 +105,11 @@ const SearchBar = ({
                   <button
                     key={loc.value}
                     type="button"
-                    className={`btn btn-sm ${location === loc.value ? "btn-primary" : "btn-outline-primary"}`}
+                    className={`btn btn-sm ${
+                      location === loc.value
+                        ? "btn-primary"
+                        : "btn-outline-primary"
+                    }`}
                     onClick={() => setLocation(loc.value)}
                   >
                     {loc.label}
@@ -107,6 +118,7 @@ const SearchBar = ({
               </div>
             </div>
 
+            {/* Buttons */}
             <div className="d-flex justify-content-between">
               <Button
                 variant="outline-secondary"
@@ -128,18 +140,22 @@ const SearchBar = ({
         </Button>
       </InputGroup>
 
+      {/* Active Filters Display */}
       {(category || location) && (
         <div className="mt-2 d-flex align-items-center">
           <small className="text-muted me-3">Active filters:</small>
           <div className="d-flex gap-2">
             {category && (
               <span className="badge bg-primary">
-                Category: {categories.find((c) => c.value === category)?.label}
+                Category:{" "}
+                {categories.find((c) => c.value === category)?.label ||
+                  category}
               </span>
             )}
             {location && (
               <span className="badge bg-primary">
-                Location: {locations.find((l) => l.value === location)?.label}
+                Location:{" "}
+                {locations.find((l) => l.value === location)?.label || location}
               </span>
             )}
             <Button

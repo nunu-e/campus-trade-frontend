@@ -1,212 +1,143 @@
-import axios from "axios";
-import moment from "moment";
-import React, { useEffect, useRef, useState } from "react";
-import { Button, Card, Form, InputGroup, Spinner } from "react-bootstrap";
-import { FaClock, FaPaperPlane, FaUser } from "react-icons/fa";
-import { useMessage } from "../../context/MessageContext";
+import { useEffect, useState } from "react";
+import { Badge, Button, Card, ListGroup, Spinner } from "react-bootstrap";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { messageAPI } from "../../services/api";
 
-const ChatWindow = ({ otherUser, listingId }) => {
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [sending, setSending] = useState(false);
-  const messagesEndRef = useRef(null);
-  const { sendMessage, socket } = useMessage();
+const MessageList = () => {
+  const [conversations, setConversations] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (otherUser) {
-      loadMessages();
-    }
-  }, [otherUser]);
+  const { userInfo } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    if (socket) {
-      socket.on("newMessage", (message) => {
-        if (
-          message.senderId === otherUser?._id ||
-          message.receiverId === otherUser?._id
-        ) {
-          setMessages((prev) => [...prev, message]);
-          scrollToBottom();
-        }
-      });
-
-      return () => {
-        socket.off("newMessage");
-      };
+    if (userInfo) {
+      fetchConversations();
     }
-  }, [socket, otherUser]);
+  }, [userInfo]);
 
-  const loadMessages = async () => {
-    if (!otherUser) return;
-
-    setLoading(true);
+  const fetchConversations = async () => {
     try {
-      const response = await axios.get(
-        `/api/messages/conversation/${otherUser._id}`,
-      );
-      setMessages(response.data);
-      scrollToBottom();
+      setLoading(true);
+      const [conversationsRes, unreadRes] = await Promise.all([
+        messageAPI.getConversations(),
+        messageAPI.getUnreadCount(),
+      ]);
+
+      setConversations(conversationsRes.data);
+      setUnreadCount(unreadRes.data.unreadCount);
     } catch (error) {
-      console.error("Error loading messages:", error);
+      console.error("Error fetching conversations:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-
-    if (!newMessage.trim() || !otherUser || sending) return;
-
-    setSending(true);
-
-    const result = await sendMessage(otherUser._id, newMessage, listingId);
-
-    if (result.success) {
-      setMessages((prev) => [...prev, result.data]);
-      setNewMessage("");
-      scrollToBottom();
+    if (diffMins < 60) {
+      return `${diffMins}m ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours}h ago`;
+    } else if (diffDays === 1) {
+      return "Yesterday";
+    } else if (diffDays < 7) {
+      return `${diffDays}d ago`;
+    } else {
+      return date.toLocaleDateString();
     }
-
-    setSending(false);
   };
 
-  const formatTime = (timestamp) => {
-    return moment(timestamp).format("h:mm A");
-  };
-
-  const formatDate = (timestamp) => {
-    return moment(timestamp).format("MMM D, YYYY");
-  };
-
-  if (!otherUser) {
+  if (loading) {
     return (
-      <Card className="h-100 shadow">
-        <Card.Body className="d-flex align-items-center justify-content-center">
-          <div className="text-center text-muted">
-            <h5>Select a conversation</h5>
-            <p>Choose a user from the list to start chatting</p>
-          </div>
-        </Card.Body>
-      </Card>
+      <div className="text-center py-4">
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </Spinner>
+      </div>
     );
   }
 
   return (
-    <Card className="h-100 shadow">
-      <Card.Header className="bg-white border-bottom">
-        <div className="d-flex align-items-center">
-          <div className="me-3">
-            <div
-              className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-              style={{ width: "40px", height: "40px" }}
-            >
-              <FaUser />
-            </div>
-          </div>
-          <div>
-            <h6 className="mb-0">{otherUser.name}</h6>
-            <small className="text-muted">{otherUser.email}</small>
-          </div>
+    <Card>
+      <Card.Header className="bg-primary text-white d-flex justify-content-between align-items-center">
+        <div>
+          <h5 className="mb-0">
+            <i className="fas fa-envelope me-2"></i>
+            Messages
+          </h5>
+        </div>
+        <div>
+          {unreadCount > 0 && (
+            <Badge bg="danger" pill>
+              {unreadCount} unread
+            </Badge>
+          )}
+          <Button
+            variant="outline-light"
+            size="sm"
+            onClick={fetchConversations}
+            className="ms-2"
+          >
+            <i className="fas fa-sync-alt"></i>
+          </Button>
         </div>
       </Card.Header>
 
-      <Card.Body className="p-0" style={{ overflow: "hidden" }}>
-        {loading ? (
-          <div className="d-flex justify-content-center align-items-center h-100">
-            <Spinner animation="border" variant="primary" />
+      <Card.Body className="p-0">
+        {conversations.length === 0 ? (
+          <div className="text-center py-5">
+            <i className="fas fa-comments fa-3x text-muted mb-3"></i>
+            <p className="text-muted">No conversations yet</p>
+            <p className="text-muted small">
+              Start a conversation by messaging a seller from their listing
+            </p>
           </div>
         ) : (
-          <div
-            className="p-3"
-            style={{
-              height: "400px",
-              overflowY: "auto",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            {messages.length === 0 ? (
-              <div className="text-center text-muted mt-5">
-                <h6>No messages yet</h6>
-                <p>Start the conversation by sending a message</p>
-              </div>
-            ) : (
-              <>
-                {messages.map((message, index) => {
-                  const isMyMessage = message.senderId._id !== otherUser._id;
-                  const showDate =
-                    index === 0 ||
-                    formatDate(messages[index - 1].createdAt) !==
-                      formatDate(message.createdAt);
-
-                  return (
-                    <React.Fragment key={message._id}>
-                      {showDate && (
-                        <div className="text-center my-3">
-                          <Badge bg="light" text="dark" className="px-3 py-1">
-                            {formatDate(message.createdAt)}
-                          </Badge>
-                        </div>
-                      )}
-
-                      <div
-                        className={`d-flex mb-3 ${isMyMessage ? "justify-content-end" : "justify-content-start"}`}
-                      >
-                        <div
-                          className={`rounded p-3 max-w-75 ${isMyMessage ? "bg-primary text-white" : "bg-light"}`}
-                          style={{ maxWidth: "75%" }}
-                        >
-                          <div className="mb-1">{message.content}</div>
-                          <div
-                            className={`small d-flex align-items-center ${isMyMessage ? "text-white-50" : "text-muted"}`}
-                          >
-                            <FaClock className="me-1" size={12} />
-                            {formatTime(message.createdAt)}
-                          </div>
-                        </div>
-                      </div>
-                    </React.Fragment>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </>
-            )}
-          </div>
+          <ListGroup variant="flush">
+            {conversations.map((conv) => (
+              <ListGroup.Item
+                key={conv.userId}
+                action
+                onClick={() => navigate(`/messages/${conv.userId}`)}
+                className="py-3"
+              >
+                <div className="d-flex justify-content-between align-items-start">
+                  <div className="flex-grow-1">
+                    <div className="d-flex justify-content-between">
+                      <strong>{conv.userName}</strong>
+                      <small className="text-muted">
+                        {formatTime(conv.lastMessageTime)}
+                      </small>
+                    </div>
+                    <p
+                      className="mb-1 text-truncate"
+                      style={{ maxWidth: "300px" }}
+                    >
+                      {conv.lastMessage}
+                    </p>
+                  </div>
+                  {conv.unreadCount > 0 && (
+                    <Badge bg="primary" pill className="ms-2">
+                      {conv.unreadCount}
+                    </Badge>
+                  )}
+                </div>
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
         )}
       </Card.Body>
-
-      <Card.Footer className="bg-white border-top">
-        <Form onSubmit={handleSendMessage}>
-          <InputGroup>
-            <Form.Control
-              type="text"
-              placeholder="Type your message here..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              disabled={sending}
-            />
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={!newMessage.trim() || sending}
-            >
-              {sending ? (
-                <Spinner animation="border" size="sm" />
-              ) : (
-                <FaPaperPlane />
-              )}
-            </Button>
-          </InputGroup>
-        </Form>
-      </Card.Footer>
     </Card>
   );
 };
 
-export default ChatWindow;
+export default MessageList;

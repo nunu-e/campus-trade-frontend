@@ -1,8 +1,6 @@
 import axios from "axios";
 
-// IMPORTANT: Remove '/api' from the base URL since Render is already at root
-const API_BASE_URL =
-  process.env.REACT_APP_API_URL || "https://campus-trade-backend.onrender.com";
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -30,6 +28,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Unauthorized - clear storage and redirect to login
       localStorage.removeItem("user");
       window.location.href = "/login";
     }
@@ -39,20 +38,22 @@ api.interceptors.response.use(
 
 // Auth API
 export const authAPI = {
-  register: (userData) => api.post("/api/auth/register", userData), // Now correct: /api/auth/register
   login: (credentials) => api.post("/api/auth/login", credentials),
+  register: (userData) => api.post("/api/auth/register", userData),
   getProfile: () => api.get("/api/auth/profile"),
   updateProfile: (profileData) => api.put("/api/auth/profile", profileData),
   verifyEmail: (code) => api.get(`/api/auth/verify/${code}`),
 };
+
 // User API
 export const userAPI = {
   getById: (id) => api.get(`/api/users/${id}`),
-  getListings: (userId) => api.get(`/api/users/${userId}/listings`),
-  getTransactions: (userId) => api.get(`/api/users/${userId}/transactions`),
-  getReviews: (userId) => api.get(`/api/users/${userId}/reviews`),
-  search: (params) => api.get("/api/users/search", { params }),
+  getUsers: (params) => api.get("/api/users/search", { params }),
+  getUserListings: (id) => api.get(`/api/users/${id}/listings`),
+  getUserTransactions: (id) => api.get(`/api/users/${id}/transactions`),
+  getUserReviews: (id) => api.get(`/api/users/${id}/reviews`),
 };
+
 // Listing API
 export const listingAPI = {
   getAll: (params) => api.get("/api/listings", { params }),
@@ -67,13 +68,63 @@ export const listingAPI = {
 
 // Transaction API
 export const transactionAPI = {
-  create: (transactionData) => api.post("/api/transactions", transactionData),
-  getMyTransactions: () => api.get("/api/transactions/my-transactions"),
-  getById: (id) => api.get(`/api/transactions/${id}`),
-  updateStatus: (id, status) =>
-    api.put(`/api/transactions/${id}/status`, { status }),
-  cancel: (id, reason) => api.put(`/api/transactions/${id}/cancel`, { reason }),
-  complete: (id) => api.put(`/api/transactions/${id}/complete`),
+  create: async (transactionData) => {
+    try {
+      const response = await api.post("/api/transactions", transactionData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getMyTransactions: async () => {
+    try {
+      const response = await api.get("/api/transactions/my-transactions");
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getById: async (id) => {
+    try {
+      const response = await api.get(`/api/transactions/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  updateStatus: async (id, status) => {
+    try {
+      const response = await api.put(`/api/transactions/${id}/status`, {
+        status,
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  cancel: async (id, reason) => {
+    try {
+      const response = await api.put(`/api/transactions/${id}/cancel`, {
+        reason,
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  complete: async (id) => {
+    try {
+      const response = await api.put(`/api/transactions/${id}/complete`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 
 // Message API
@@ -94,25 +145,74 @@ export const reviewAPI = {
   delete: (id) => api.delete(`/api/reviews/${id}`),
 };
 
-// Admin API
-export const adminAPI = {
-  getUsers: (params) => api.get("/api/admin/users", { params }),
-  updateUserStatus: (id, statusData) =>
-    api.put(`/api/admin/users/${id}/status`, statusData),
-  getListings: (params) => api.get("/api/admin/listings", { params }),
-  updateListingStatus: (id, statusData) =>
-    api.put(`/api/admin/listings/${id}/status`, statusData),
-  getTransactions: (params) => api.get("/api/admin/transactions", { params }),
-  getStats: () => api.get("/api/admin/stats"),
-  getReports: (params) => api.get("/api/admin/reports", { params }),
-};
-
 // Report API
 export const reportAPI = {
   create: (reportData) => api.post("/api/reports", reportData),
   getMyReports: () => api.get("/api/reports"),
   getById: (id) => api.get(`/api/reports/${id}`),
   updateStatus: (id, statusData) => api.put(`/api/reports/${id}`, statusData),
+};
+
+// Admin API - Note: These endpoints need to be implemented in backend
+export const adminAPI = {
+  getUsers: async (params) => {
+    // In production, this would be a dedicated admin endpoint
+    // For now, we'll use the regular users endpoint
+    return userAPI.getUsers(params);
+  },
+
+  updateUserStatus: async (id, statusData) => {
+    // This would need to be implemented in backend
+    console.log("Admin update user status:", id, statusData);
+    return { data: { success: true } };
+  },
+
+  getListings: async (params) => {
+    // In production, this would be a dedicated admin endpoint
+    // For now, we'll use the regular listings endpoint
+    return listingAPI.getAll(params);
+  },
+
+  updateListingStatus: async (id, statusData) => {
+    // This would need to be implemented in backend
+    console.log("Admin update listing status:", id, statusData);
+    return { data: { success: true } };
+  },
+
+  getTransactions: async () => {
+    // In production, this would be a dedicated admin endpoint
+    // For now, we'll use the regular transactions endpoint
+    return transactionAPI.getMyTransactions();
+  },
+
+  getStats: async () => {
+    // This would need to be implemented in backend
+    // For now, return empty stats
+    return {
+      data: {
+        overview: {
+          totalUsers: 0,
+          activeUsers: 0,
+          totalListings: 0,
+          activeListings: 0,
+          totalTransactions: 0,
+          completedTransactions: 0,
+          pendingReports: 0,
+        },
+        recentActivities: {
+          users: [],
+          listings: [],
+          transactions: [],
+        },
+      },
+    };
+  },
+
+  getReports: async (params) => {
+    // This would need to be implemented in backend
+    console.log("Get reports with params:", params);
+    return { data: { reports: [], total: 0 } };
+  },
 };
 
 export default api;

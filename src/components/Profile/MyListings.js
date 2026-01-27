@@ -133,6 +133,7 @@ const MyListings = () => {
                     {listing.images?.[0] && (
                       <img
                         src={listing.images[0]}
+                        onError={(e) => (e.target.src = "/placeholder.png")}
                         alt={listing.title}
                         style={{
                           width: "50px",
