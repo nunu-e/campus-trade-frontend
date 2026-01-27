@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Card, Col, Container, Row } from "react-bootstrap";
+import { Alert, Card, Col, Container, Row, Spinner } from "react-bootstrap";
 import { FaComments } from "react-icons/fa";
 import ChatWindow from "../components/messages/ChatWindow";
 import ConversationList from "../components/messages/ConversationList";
@@ -54,25 +54,41 @@ const MessagesPage = () => {
         </Col>
       </Row>
 
-      <Row>
-        <Col lg={4} className="mb-4 mb-lg-0">
-          <Card className="h-100 shadow">
-            <Card.Body className="p-0">
-              <ConversationList
-                onSelectConversation={handleSelectConversation}
-                selectedUserId={selectedConversation?._id}
-              />
-            </Card.Body>
-          </Card>
-        </Col>
+      {loading ? (
+        <div className="text-center py-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-2">Loading messages...</p>
+        </div>
+      ) : (
+        <Row>
+          <Col lg={4} className="mb-4 mb-lg-0">
+            <Card className="h-100 shadow">
+              <Card.Body className="p-0">
+                <ConversationList
+                  onSelectConversation={handleSelectConversation}
+                  selectedUserId={selectedConversation?._id}
+                />
+              </Card.Body>
+            </Card>
+          </Col>
 
-        <Col lg={8}>
-          <ChatWindow
-            otherUser={selectedConversation}
-            listingId={null} // Can pass listingId if from listing page
-          />
-        </Col>
-      </Row>
+          <Col lg={8}>
+            {selectedConversation ? (
+              <ChatWindow otherUser={selectedConversation} listingId={null} />
+            ) : (
+              <Card className="h-100 shadow d-flex align-items-center justify-content-center">
+                <Card.Body className="text-center">
+                  <FaComments size={64} className="text-muted mb-3" />
+                  <h5>Select a conversation</h5>
+                  <p className="text-muted">
+                    Choose a conversation from the list to start messaging
+                  </p>
+                </Card.Body>
+              </Card>
+            )}
+          </Col>
+        </Row>
+      )}
     </Container>
   );
 };

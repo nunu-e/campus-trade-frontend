@@ -14,9 +14,6 @@ export const MessageProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
 
-  /* =========================
-     Axios auth helper (FIXED)
-  ========================== */
   const authAxios = useMemo(() => {
     return axios.create({
       headers: {
@@ -25,14 +22,10 @@ export const MessageProvider = ({ children }) => {
     });
   }, [user?.token]);
 
-  /* =========================
-     Socket connection
-  ========================== */
   useEffect(() => {
     if (!user?.token) return;
 
-    const socketUrl =
-      import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
+    const socketUrl = import.meta.env.REACT_APP_WS_URL || "ws://localhost:5000";
 
     const newSocket = io(socketUrl, {
       auth: { token: user.token },
@@ -46,7 +39,6 @@ export const MessageProvider = ({ children }) => {
 
       setConversations((prev) => {
         const filtered = prev.filter((c) => c.userId !== senderId);
-
         const existing = prev.find((c) => c.userId === senderId);
 
         const updatedConversation = {
@@ -65,6 +57,8 @@ export const MessageProvider = ({ children }) => {
     };
 
     const handleNotification = (notification) => {
+      // ✅ Ignore email verification notifications
+      if (notification.type === "emailVerified") return;
       setNotifications((prev) => [notification, ...prev]);
     };
 
@@ -86,10 +80,6 @@ export const MessageProvider = ({ children }) => {
       newSocket.disconnect();
     };
   }, [user?.token]);
-
-  /* =========================
-     API calls
-  ========================== */
 
   const loadConversations = async () => {
     try {
@@ -140,15 +130,12 @@ export const MessageProvider = ({ children }) => {
   const markAsRead = async (messageId) => {
     try {
       await authAxios.put(`/api/messages/${messageId}/read`);
-      loadUnreadCount(); // ✅ resync instead of guessing
+      loadUnreadCount(); // resync instead of guessing
     } catch (err) {
       console.error("❌ Mark as read failed:", err);
     }
   };
 
-  /* =========================
-     Context value
-  ========================== */
   const value = {
     socket,
     conversations,

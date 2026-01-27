@@ -12,6 +12,8 @@ const VerifyEmail = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let isMounted = true;
+
     const verify = async () => {
       if (!code) {
         setStatus("error");
@@ -21,6 +23,8 @@ const VerifyEmail = () => {
 
       try {
         const result = await verifyEmail(code);
+        if (!isMounted) return;
+
         if (result.success) {
           setStatus("success");
           setMessage("Your email has been verified successfully!");
@@ -29,16 +33,20 @@ const VerifyEmail = () => {
           setMessage(result.error || "Verification failed");
         }
       } catch (error) {
+        if (!isMounted) return;
         setStatus("error");
         setMessage("An error occurred during verification");
       }
     };
 
     verify();
+
+    return () => {
+      isMounted = false;
+    };
   }, [code, verifyEmail]);
 
   const handleResendVerification = () => {
-    // Implement resend verification logic
     console.log("Resend verification requested");
   };
 
@@ -119,5 +127,4 @@ const VerifyEmail = () => {
   );
 };
 
-// Make sure to export as default
 export default VerifyEmail;

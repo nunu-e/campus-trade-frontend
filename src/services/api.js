@@ -7,6 +7,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
 });
 
 // Request interceptor to add auth token
@@ -62,7 +63,7 @@ export const listingAPI = {
   update: (id, listingData) => api.put(`/api/listings/${id}`, listingData),
   delete: (id) => api.delete(`/api/listings/${id}`),
   search: (params) => api.get("/api/listings/search", { params }),
-  reserve: (id) => api.post(`/api/listings/${id}/reserve`),
+  reserveListing: (id) => api.post(`/api/listings/${id}/reserve`),
   getMyListings: () => api.get("/api/listings/my-listings"),
 };
 

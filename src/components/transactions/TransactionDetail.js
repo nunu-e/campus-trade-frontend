@@ -73,7 +73,7 @@ const TransactionDetail = () => {
 
     try {
       setUpdating(true);
-      await transactionAPI.completeTransaction(id);
+      await transactionAPI.complete(id);
       await fetchTransaction();
       alert("Transaction completed successfully.");
     } catch (error) {

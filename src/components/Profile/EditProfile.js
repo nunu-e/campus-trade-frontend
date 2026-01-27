@@ -99,9 +99,6 @@ const EditProfile = () => {
     }
     if (!result.success) {
       setErrors({ form: result.error || "Failed to update profile" });
-      {
-        errors.form && <Alert variant="danger">{errors.form}</Alert>;
-      }
     }
 
     setLoading(false);

@@ -28,15 +28,18 @@ const TransactionsPage = () => {
       setLoading(true);
       const response = await transactionAPI.getMyTransactions();
 
-      let filtered = response.data;
-      if (activeTab !== "all") {
-        filtered = filtered.filter((t) => t.status === activeTab);
+      if (response.data && Array.isArray(response.data)) {
+        let filtered = response.data;
+        if (activeTab !== "all") {
+          filtered = filtered.filter((t) => t.status === activeTab);
+        }
+        setTransactions(filtered);
+      } else {
+        setError("No transactions data received");
       }
-
-      setTransactions(filtered);
     } catch (error) {
       console.error("Error fetching transactions:", error);
-      setError("Failed to load transactions");
+      setError("Failed to load transactions. Please try again.");
     } finally {
       setLoading(false);
     }

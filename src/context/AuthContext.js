@@ -35,14 +35,14 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.post("/api/auth/register", userData);
 
       if (response.data) {
-        const user = {
+        const userObj = {
           ...response.data,
           token: response.data.token,
         };
 
-        localStorage.setItem("user", JSON.stringify(user));
-        setUser(user);
-        setupAxiosHeaders(user.token);
+        localStorage.setItem("user", JSON.stringify(userObj));
+        setUser(userObj);
+        setupAxiosHeaders(userObj.token);
 
         toast.success(
           "Registration successful! Please check your email for verification.",
@@ -65,14 +65,14 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.post("/api/auth/login", { email, password });
 
       if (response.data) {
-        const user = {
+        const userObj = {
           ...response.data,
           token: response.data.token,
         };
 
-        localStorage.setItem("user", JSON.stringify(user));
-        setUser(user);
-        setupAxiosHeaders(user.token);
+        localStorage.setItem("user", JSON.stringify(userObj));
+        setUser(userObj);
+        setupAxiosHeaders(userObj.token);
 
         toast.success("Login successful!");
         return { success: true };
@@ -116,18 +116,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ✅ Fix: verifyEmail toast triggers only once
+  // In AuthContext.js, modify verifyEmail function:
   const verifyEmail = async (code) => {
     try {
       setLoading(true);
       const response = await axios.get(`/api/auth/verify/${code}`);
 
-      if (response.data) {
-        const updatedUser = { ...user, isVerified: true };
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-        setUser(updatedUser);
-
-        toast.success("Email verified successfully!");
+      if (response.data.success) {
+        // Update user verification status
+        if (user && !user.isVerified) {
+          const updatedUser = { ...user, isVerified: true };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          setUser(updatedUser);
+          toast.success("Email verified successfully!");
+        }
         return { success: true };
+      } else {
+        toast.error(response.data.message || "Verification failed");
+        return { success: false, error: response.data.message };
       }
     } catch (error) {
       const message = error.response?.data?.message || "Verification failed";
