@@ -1,5 +1,5 @@
 // src/components/transactions/TransactionDetail.js
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Badge,
@@ -25,11 +25,7 @@ const TransactionDetail = () => {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    fetchTransaction();
-  }, [id]);
-
-  const fetchTransaction = async () => {
+  const fetchTransaction = useCallback(async () => {
     try {
       setLoading(true);
       const response = await transactionAPI.getById(id);
@@ -40,7 +36,11 @@ const TransactionDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchTransaction();
+  }, [id, fetchTransaction]);
 
   const handleMarkAsSold = async () => {
     if (

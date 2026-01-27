@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Button,
@@ -27,19 +27,20 @@ const MarketplacePage = () => {
     sort: "-createdAt",
   });
   const [showFilters, setShowFilters] = useState(false);
+  const filtersRef = useRef(filters);
 
   useEffect(() => {
-    fetchListings();
-  }, []);
+    filtersRef.current = filters;
+  }, [filters]);
 
-  const fetchListings = async (searchParams = {}) => {
+  const fetchListings = useCallback(async (searchParams = {}) => {
     setLoading(true);
     setError("");
 
     try {
       const params = {
         status: "Available",
-        ...filters,
+        ...filtersRef.current,
         ...searchParams,
       };
 
@@ -51,22 +52,11 @@ const MarketplacePage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleSearch = (searchParams) => {
-    // SearchBar can pass either a string (legacy) or an object with filters
-    if (typeof searchParams === "string") {
-      fetchListings({ q: searchParams });
-    } else if (searchParams && typeof searchParams === "object") {
-      // Merge search params with existing filters
-      fetchListings({
-        ...searchParams,
-        q: searchParams.q || undefined,
-      });
-    } else {
-      fetchListings();
-    }
-  };
+  useEffect(() => {
+    fetchListings();
+  }, [fetchListings]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;

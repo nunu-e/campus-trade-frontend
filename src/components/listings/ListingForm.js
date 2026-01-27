@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, Button, Container, Form, Spinner } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -29,12 +29,7 @@ const ListingForm = () => {
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    // only fetch when editing an existing listing (id should be a real id, not the literal 'new')
-    if (id && id !== "new") fetchListing();
-  }, [id]);
-
-  const fetchListing = async () => {
+  const fetchListing = useCallback(async () => {
     try {
       setFetching(true);
       const response = await listingAPI.getById(id);
@@ -54,7 +49,12 @@ const ListingForm = () => {
     } finally {
       setFetching(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    // only fetch when editing an existing listing (id should be a real id, not the literal 'new')
+    if (id && id !== "new") fetchListing();
+  }, [id, fetchListing]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Badge,
@@ -41,22 +41,8 @@ const Profile = () => {
     }
   });
 
-  useEffect(() => {
-    if (user) {
-      fetchProfile();
-      fetchReviews();
-      fetchListingsCount();
-    }
-  }, [user]);
-
-  // react to changes in query param to switch tabs
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const tab = params.get("tab");
-    if (tab) setActiveTab(tab);
-  }, [location.search]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
+    if (!user?._id) return;
     try {
       const response = await userAPI.getById(user._id);
       setProfile(response.data);
@@ -65,9 +51,10 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?._id]);
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
+    if (!user?._id) return;
     try {
       const response = await reviewAPI.getForUser(user._id);
       setReviews(response.data || []);
@@ -76,9 +63,10 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?._id]);
 
-  const fetchListingsCount = async () => {
+  const fetchListingsCount = useCallback(async () => {
+    if (!user?._id) return;
     try {
       const response = await userAPI.getUserListings(user._id);
       setListingsCount(response.data?.length || 0);
@@ -87,7 +75,22 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?._id]);
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+      fetchReviews();
+      fetchListingsCount();
+    }
+  }, [user, fetchProfile, fetchReviews, fetchListingsCount]);
+
+  // react to changes in query param to switch tabs
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get("tab");
+    if (tab) setActiveTab(tab);
+  }, [location.search]);
 
   const calculateAverageRating = () => {
     if (!reviews || reviews.length === 0) return 0;

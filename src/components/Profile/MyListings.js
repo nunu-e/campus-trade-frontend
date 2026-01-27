@@ -9,7 +9,7 @@ import {
   Table,
 } from "react-bootstrap";
 import { FaEdit, FaEllipsisV, FaEye, FaPlus, FaTrash } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { listingAPI } from "../../services/api";
 
@@ -19,7 +19,6 @@ const MyListings = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [listingToDelete, setListingToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchMyListings();

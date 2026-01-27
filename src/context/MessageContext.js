@@ -1,5 +1,5 @@
 import axios from "axios";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { io } from "socket.io-client";
 import { useAuth } from "./AuthContext";
 
@@ -26,23 +26,23 @@ export const MessageProvider = ({ children }) => {
     });
   }, [user?.token]);
 
-  const loadConversations = async () => {
+  const loadConversations = useCallback(async () => {
     try {
       const res = await authAxios.get("/api/messages/conversations");
       setConversations(res.data || []);
     } catch (err) {
       console.error("❌ Load conversations failed:", err);
     }
-  };
+  }, [authAxios]);
 
-  const loadUnreadCount = async () => {
+  const loadUnreadCount = useCallback(async () => {
     try {
       const res = await authAxios.get("/api/messages/unread-count");
       setUnreadCount(res.data.unreadCount || 0);
     } catch (err) {
       console.error("❌ Load unread count failed:", err);
     }
-  };
+  }, [authAxios]);
 
   useEffect(() => {
     if (!user?.token) return;
@@ -108,7 +108,7 @@ export const MessageProvider = ({ children }) => {
       newSocket.off("notification", handleNotification);
       newSocket.disconnect();
     };
-  }, [user?.token, authAxios]);
+  }, [user?.token, authAxios, loadConversations, loadUnreadCount]);
 
   const fetchConversationMessages = async (userId) => {
     try {
