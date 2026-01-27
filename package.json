@@ -26,7 +26,6 @@
   },
   "proxy": "http://localhost:5000",
   "devDependencies": {
-    "eslint-plugin-react-hooks": "^7.0.1",
     "puppeteer": "^24.36.0",
     "react-scripts": "5.0.1"
   },
