@@ -15,19 +15,48 @@ export const MessageProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
 
   const authAxios = useMemo(() => {
+    const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
     return axios.create({
+      baseURL: API_BASE_URL,
       headers: {
         Authorization: user?.token ? `Bearer ${user.token}` : "",
+        "Content-Type": "application/json",
       },
+      withCredentials: true,
     });
   }, [user?.token]);
+
+  const loadConversations = async () => {
+    try {
+      const res = await authAxios.get("/api/messages/conversations");
+      setConversations(res.data || []);
+    } catch (err) {
+      console.error("❌ Load conversations failed:", err);
+    }
+  };
+
+  const loadUnreadCount = async () => {
+    try {
+      const res = await authAxios.get("/api/messages/unread-count");
+      setUnreadCount(res.data.unreadCount || 0);
+    } catch (err) {
+      console.error("❌ Load unread count failed:", err);
+    }
+  };
 
   useEffect(() => {
     if (!user?.token) return;
 
-    const socketUrl = import.meta.env.REACT_APP_WS_URL || "ws://localhost:5000";
+    // Socket.IO accepts http/https URLs, not ws/wss
+    // It will automatically use the correct protocol (ws/wss) internally
+    const socketUrl = process.env.REACT_APP_WS_URL || "http://localhost:5000";
+    
+    // Convert wss:// to https:// and ws:// to http:// for Socket.IO
+    const normalizedUrl = socketUrl.replace(/^wss?:\/\//, (match) => 
+      match === 'wss://' ? 'https://' : 'http://'
+    );
 
-    const newSocket = io(socketUrl, {
+    const newSocket = io(normalizedUrl, {
       auth: { token: user.token },
     });
 
@@ -79,25 +108,7 @@ export const MessageProvider = ({ children }) => {
       newSocket.off("notification", handleNotification);
       newSocket.disconnect();
     };
-  }, [user?.token]);
-
-  const loadConversations = async () => {
-    try {
-      const res = await authAxios.get("/api/messages/conversations");
-      setConversations(res.data || []);
-    } catch (err) {
-      console.error("❌ Load conversations failed:", err);
-    }
-  };
-
-  const loadUnreadCount = async () => {
-    try {
-      const res = await authAxios.get("/api/messages/unread-count");
-      setUnreadCount(res.data.unreadCount || 0);
-    } catch (err) {
-      console.error("❌ Load unread count failed:", err);
-    }
-  };
+  }, [user?.token, authAxios]);
 
   const fetchConversationMessages = async (userId) => {
     try {

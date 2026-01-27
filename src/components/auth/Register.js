@@ -111,11 +111,18 @@ const Register = () => {
       const result = await register(registrationData);
 
       if (result.success) {
-        // Show success message and redirect
-        alert(
-          result.message ||
-            "Registration successful! Please check your email for verification.",
-        );
+        // Show success message with email info
+        const message = result.message || "Registration successful! Please check your email for verification.";
+        
+        // In development mode, show the verification link if available
+        if (result.data?.verificationLink) {
+          alert(
+            `${message}\n\nDevelopment Mode - Verification Link:\n${result.data.verificationLink}`
+          );
+        } else {
+          alert(message);
+        }
+        
         navigate("/login");
       } else {
         setApiError(result.error || "Registration failed");

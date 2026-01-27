@@ -78,11 +78,24 @@ const MyListings = () => {
   };
 
   const normalizeImage = (img) => {
-    if (!img) return "/placeholder.png";
+    if (!img) return "/logo192.png";
     const s = String(img);
-    if (s.startsWith("http") || s.startsWith("/") || s.startsWith("data:"))
+    // If it's already a full URL, return as is
+    if (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("data:")) {
       return s;
-    return "/placeholder.png";
+    }
+    // If it starts with /, it's a relative path
+    if (s.startsWith("/")) {
+      return s;
+    }
+    // If it's a relative path without /, try to construct full URL
+    const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+    // Check if it looks like a file path that needs the API base URL
+    if (s.includes("uploads") || s.includes("images")) {
+      return `${API_BASE_URL}/${s}`;
+    }
+    // Default fallback
+    return "/logo192.png";
   };
 
   if (loading) {

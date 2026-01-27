@@ -29,23 +29,25 @@ const ListingDetail = () => {
   const [showReserveModal, setShowReserveModal] = useState(false);
   const [reserving, setReserving] = useState(false);
 
-  useEffect(() => {
-    // guard: only fetch when id looks valid
-    if (id && id !== "new") fetchListing();
-  }, [id]);
-
   const fetchListing = async () => {
     try {
       setLoading(true);
+      setError(""); // Clear previous errors
       const response = await listingAPI.getById(id);
       setListing(response.data);
     } catch (err) {
       console.error("Error fetching listing:", err);
-      setError("Failed to load listing");
+      setError(err.response?.data?.message || "Failed to load listing");
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // guard: only fetch when id looks valid
+    if (id && id !== "new") fetchListing();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const handleReserve = () => {
     if (!user) {
@@ -67,7 +69,7 @@ const ListingDetail = () => {
   const confirmReserve = async () => {
     try {
       setReserving(true);
-      await listingAPI.reserve(listing._id);
+      await listingAPI.reserveListing(listing._id);
       toast.success(
         "Listing reserved successfully! Contact the seller to complete the transaction.",
       );
@@ -82,15 +84,21 @@ const ListingDetail = () => {
 
   const handleMessageSeller = () => {
     if (!user) {
+      toast.info("Please login to message the seller");
       navigate("/login");
       return;
     }
     if (!isVerified) {
-      toast.error("Please verify your email first");
+      toast.error("Please verify your email to message sellers");
+      navigate("/profile");
+      return;
+    }
+    if (!listing?.sellerId?._id) {
+      toast.error("Seller information not available");
       return;
     }
     navigate(
-      `/messages?userId=${listing?.sellerId?._id}&listingId=${listing?._id}`,
+      `/messages?userId=${listing.sellerId._id}&listingId=${listing._id}`,
     );
   };
 
@@ -109,14 +117,31 @@ const ListingDetail = () => {
     );
   }
 
-  if (error || !listing) {
+  if (error) {
     return (
       <Container className="py-5">
         <Alert variant="danger">
           <h5>Error Loading Listing</h5>
-          <p>{error || "Listing not found"}</p>
+          <p>{error}</p>
           <Button
             variant="outline-danger"
+            onClick={() => navigate("/marketplace")}
+          >
+            Back to Marketplace
+          </Button>
+        </Alert>
+      </Container>
+    );
+  }
+
+  if (!listing) {
+    return (
+      <Container className="py-5">
+        <Alert variant="warning">
+          <h5>Listing Not Found</h5>
+          <p>The listing you're looking for doesn't exist or has been removed.</p>
+          <Button
+            variant="outline-primary"
             onClick={() => navigate("/marketplace")}
           >
             Back to Marketplace
@@ -138,8 +163,21 @@ const ListingDetail = () => {
   const normalizeImage = (img) => {
     if (!img) return "/logo192.png";
     const s = String(img);
-    if (s.startsWith("http") || s.startsWith("/") || s.startsWith("data:"))
+    // If it's already a full URL, return as is
+    if (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("data:")) {
       return s;
+    }
+    // If it starts with /, it's a relative path
+    if (s.startsWith("/")) {
+      return s;
+    }
+    // If it's a relative path without /, try to construct full URL
+    const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+    // Check if it looks like a file path that needs the API base URL
+    if (s.includes("uploads") || s.includes("images")) {
+      return `${API_BASE_URL}/${s}`;
+    }
+    // Default fallback
     return "/logo192.png";
   };
 
@@ -222,7 +260,51 @@ const ListingDetail = () => {
         <Col lg={6}>
           <Card className="shadow-sm h-100">
             <Card.Body className="d-flex flex-column">
-              {/* ...rest of your listing details UI, unchanged */}
+              <h2 className="mb-3">{listing.title}</h2>
+              
+              <div className="mb-3">
+                <h3 className="text-primary mb-2">{formatPrice(listing.price)}</h3>
+                <div className="d-flex gap-2 mb-2">
+                  <Badge bg="info">{listing.category}</Badge>
+                  {listing.subcategory && <Badge bg="secondary">{listing.subcategory}</Badge>}
+                  {listing.condition && <Badge bg="warning">{listing.condition}</Badge>}
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <h5>Description</h5>
+                <p className="text-muted">{listing.description}</p>
+              </div>
+
+              <div className="mb-3">
+                <Row>
+                  <Col md={6}>
+                    <p className="mb-2">
+                      <strong>Location:</strong> {listing.location}
+                    </p>
+                    {listing.specificLocation && (
+                      <p className="mb-2">
+                        <strong>Specific Location:</strong> {listing.specificLocation}
+                      </p>
+                    )}
+                  </Col>
+                  <Col md={6}>
+                    {listing.serviceType && (
+                      <p className="mb-2">
+                        <strong>Service Type:</strong> {listing.serviceType}
+                      </p>
+                    )}
+                    {listing.rentalPeriod && typeof listing.rentalPeriod === 'object' && (
+                      <p className="mb-2">
+                        <strong>Rental Period:</strong>{" "}
+                        {new Date(listing.rentalPeriod.start).toLocaleDateString()} -{" "}
+                        {new Date(listing.rentalPeriod.end).toLocaleDateString()}
+                      </p>
+                    )}
+                  </Col>
+                </Row>
+              </div>
+
               {/* Action buttons */}
               <div className="mt-auto">
                 {listing.status === "Available" ? (

@@ -13,13 +13,20 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check for stored user on mount
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      const parsed = JSON.parse(storedUser);
-      setUser(parsed);
-      setupApiHeaders(parsed.token);
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        setUser(parsed);
+        setupApiHeaders(parsed.token);
+      }
+    } catch (error) {
+      // Invalid JSON in localStorage, clear it
+      console.error("Error parsing user from localStorage:", error);
+      localStorage.removeItem("user");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const setupApiHeaders = (token) => {

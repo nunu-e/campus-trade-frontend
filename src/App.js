@@ -52,6 +52,8 @@ const VerifiedRoute = ({ children }) => {
   }
 
   if (!isVerified) {
+    // Store redirect info in sessionStorage for toast display
+    sessionStorage.setItem('verification_required', 'true');
     return <Navigate to="/profile" replace />;
   }
 

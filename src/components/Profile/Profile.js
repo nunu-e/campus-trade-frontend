@@ -121,6 +121,49 @@ const Profile = () => {
 
   return (
     <div className="py-4">
+      {/* Verification Alert */}
+      {!user.isVerified && (
+        <Alert variant="warning" className="mb-4">
+          <Alert.Heading>Email Verification Required</Alert.Heading>
+          <p>
+            Please verify your email address to create listings, message sellers, and access all features.
+          </p>
+          <p className="mb-3">
+            Check your email for the verification link. If you didn't receive it, you can request a new one.
+          </p>
+          <Button
+            variant="outline-warning"
+            size="sm"
+            onClick={async () => {
+              try {
+                const response = await fetch(`${process.env.REACT_APP_API_URL || "http://localhost:5000"}/api/auth/resend-verification`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ email: user.email }),
+                });
+                const data = await response.json();
+                if (data.success) {
+                  alert(data.message || "Verification email sent! Please check your inbox.");
+                  if (data.verificationLink) {
+                    console.log("Development mode - Verification link:", data.verificationLink);
+                    alert(`Development Mode - Verification Link:\n${data.verificationLink}`);
+                  }
+                } else {
+                  alert(data.message || "Failed to send verification email");
+                }
+              } catch (error) {
+                alert("Failed to resend verification email. Please try again.");
+              }
+            }}
+          >
+            <FaEnvelope className="me-2" />
+            Resend Verification Email
+          </Button>
+        </Alert>
+      )}
+
       {/* Profile Header */}
       <Card className="shadow-sm mb-4">
         <Card.Body>
@@ -178,9 +221,19 @@ const Profile = () => {
                       <p className="mb-2">
                         <FaCalendar className="me-2 text-muted" />
                         Joined{" "}
-                        {isNaN(new Date(user.createdAt).getTime())
-                          ? "-"
-                          : new Date(user.createdAt).toLocaleDateString()}
+                        {user.createdAt && !isNaN(new Date(user.createdAt).getTime())
+                          ? new Date(user.createdAt).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })
+                          : profile?.createdAt && !isNaN(new Date(profile.createdAt).getTime())
+                          ? new Date(profile.createdAt).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })
+                          : "N/A"}
                       </p>
                     </Col>
                   </div>

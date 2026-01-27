@@ -14,7 +14,16 @@ class MessageService {
       this.disconnect();
     }
 
-    this.socket = io(process.env.REACT_APP_WS_URL || "http://localhost:5000", {
+    // Socket.IO accepts http/https URLs, not ws/wss
+    // It will automatically use the correct protocol (ws/wss) internally
+    let socketUrl = process.env.REACT_APP_WS_URL || "http://localhost:5000";
+    
+    // Convert wss:// to https:// and ws:// to http:// for Socket.IO
+    socketUrl = socketUrl.replace(/^wss?:\/\//, (match) => 
+      match === 'wss://' ? 'https://' : 'http://'
+    );
+
+    this.socket = io(socketUrl, {
       auth: { token },
       transports: ["websocket", "polling"],
     });

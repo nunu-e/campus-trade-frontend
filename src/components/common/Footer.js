@@ -65,11 +65,21 @@ const Footer = () => {
               </li>
               <li className="mb-2">
                 <FaEnvelope className="me-2" />
-                support@campustrade.aau.edu.et
+                <a 
+                  href="mailto:ambachewelbethe7@gmail.com" 
+                  className="text-light text-decoration-none"
+                >
+                  ambachewelbethe7@gmail.com
+                </a>
               </li>
               <li className="mb-2">
                 <FaPhone className="me-2" />
-                +251 11 123 4567
+                <a 
+                  href="tel:+251965075087" 
+                  className="text-light text-decoration-none"
+                >
+                  +251965075087
+                </a>
               </li>
             </ul>
           </Col>

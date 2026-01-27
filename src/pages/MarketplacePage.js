@@ -53,8 +53,19 @@ const MarketplacePage = () => {
     }
   };
 
-  const handleSearch = (searchTerm) => {
-    fetchListings({ q: searchTerm });
+  const handleSearch = (searchParams) => {
+    // SearchBar can pass either a string (legacy) or an object with filters
+    if (typeof searchParams === "string") {
+      fetchListings({ q: searchParams });
+    } else if (searchParams && typeof searchParams === "object") {
+      // Merge search params with existing filters
+      fetchListings({
+        ...searchParams,
+        q: searchParams.q || undefined,
+      });
+    } else {
+      fetchListings();
+    }
   };
 
   const handleFilterChange = (e) => {
@@ -126,7 +137,25 @@ const MarketplacePage = () => {
 
       <Row className="mb-4">
         <Col>
-          <SearchBar onSearch={handleSearch} />
+          <SearchBar 
+            onSearch={(searchParams) => {
+              // Update filters and fetch
+              if (searchParams && typeof searchParams === "object") {
+                setFilters((prev) => ({
+                  ...prev,
+                  category: searchParams.category || prev.category,
+                  location: searchParams.location || prev.location,
+                }));
+                fetchListings({
+                  q: searchParams.q,
+                  category: searchParams.category,
+                  location: searchParams.location,
+                });
+              } else if (typeof searchParams === "string") {
+                fetchListings({ q: searchParams });
+              }
+            }} 
+          />
         </Col>
       </Row>
 
