@@ -67,8 +67,7 @@ const Login = () => {
             </Card.Header>
             <Card.Body>
               <Alert variant="info">
-                <strong>AAU Students Only:</strong> Please use your @aau.edu.et
-                email address.
+                <strong>AAU Students Only:</strong>
               </Alert>
 
               <Form onSubmit={handleSubmit}>
@@ -80,7 +79,7 @@ const Login = () => {
                     value={formData.email}
                     onChange={handleChange}
                     isInvalid={!!errors.email}
-                    placeholder="username@aau.edu.et"
+                    placeholder="username@example.com"
                   />
                   <Form.Control.Feedback type="invalid">
                     {errors.email}

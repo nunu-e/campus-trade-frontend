@@ -3,8 +3,8 @@ import { Alert, Button, Card, Container, Form, Spinner } from "react-bootstrap";
 import { FaCheckCircle, FaEnvelope, FaExclamationCircle } from "react-icons/fa";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import api from "../../services/api";
 
 const VerifyEmail = () => {
   const { code } = useParams();
@@ -32,6 +32,7 @@ const VerifyEmail = () => {
         if (result.success) {
           setStatus("success");
           setMessage("Your email has been verified successfully!");
+          setTimeout(() => navigate("/marketplace"), 1500);
         } else {
           setStatus("error");
           setMessage(result.error || "Verification failed");
@@ -48,13 +49,13 @@ const VerifyEmail = () => {
     return () => {
       isMounted = false;
     };
-  }, [code, verifyEmail]);
+  }, [code]);
 
   const handleResendVerification = async (e) => {
     e?.preventDefault();
-    
+
     const emailToUse = resendEmail || user?.email || "";
-    
+
     if (!emailToUse) {
       toast.error("Please enter your email address");
       return;
@@ -67,18 +68,31 @@ const VerifyEmail = () => {
       });
 
       if (response.data.success) {
-        toast.success(response.data.message || "Verification email sent successfully!");
+        toast.success(
+          response.data.message || "Verification email sent successfully!",
+        );
         setMessage("Verification email sent! Please check your inbox.");
+        setTimeout(() => navigate("/marketplace"), 1500);
         if (response.data.verificationLink) {
-          console.log("Development mode - Verification link:", response.data.verificationLink);
-          alert(`Development Mode - Verification Link:\n${response.data.verificationLink}`);
+          console.log(
+            "Development mode - Verification link:",
+            response.data.verificationLink,
+          );
+          alert(
+            `Development Mode - Verification Link:\n${response.data.verificationLink}`,
+          );
         }
       } else {
-        toast.error(response.data.message || "Failed to send verification email");
-        setMessage(response.data.message || "Failed to send verification email");
+        toast.error(
+          response.data.message || "Failed to send verification email",
+        );
+        setMessage(
+          response.data.message || "Failed to send verification email",
+        );
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "Failed to resend verification email";
+      const errorMessage =
+        error.response?.data?.message || "Failed to resend verification email";
       toast.error(errorMessage);
       setMessage(errorMessage);
     } finally {
@@ -138,7 +152,7 @@ const VerifyEmail = () => {
                   <Alert variant="danger" className="mb-4">
                     {message || "Invalid or expired verification code"}
                   </Alert>
-                  
+
                   <div className="mb-4">
                     <h6>Didn't receive the email?</h6>
                     <Form onSubmit={handleResendVerification}>
@@ -147,9 +161,8 @@ const VerifyEmail = () => {
                         <Form.Control
                           type="email"
                           placeholder="Enter your email"
-                          value={resendEmail}
                           onChange={(e) => setResendEmail(e.target.value)}
-                          defaultValue={user?.email || ""}
+                          value={resendEmail || user?.email || ""}
                           required
                         />
                       </Form.Group>
@@ -173,7 +186,7 @@ const VerifyEmail = () => {
                       </Button>
                     </Form>
                   </div>
-                  
+
                   <div className="d-flex gap-2 justify-content-center">
                     <Button
                       variant="primary"
@@ -194,7 +207,10 @@ const VerifyEmail = () => {
                   <p className="text-muted mb-4">
                     Enter your email address to receive a new verification link.
                   </p>
-                  <Form onSubmit={handleResendVerification} className="text-start">
+                  <Form
+                    onSubmit={handleResendVerification}
+                    className="text-start"
+                  >
                     <Form.Group className="mb-3">
                       <Form.Label>Email Address</Form.Label>
                       <Form.Control
