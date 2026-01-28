@@ -51,11 +51,7 @@ const TransactionsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeTab]);
-
-  useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
+  };
 
   const getTransactionStats = () => {
     const stats = {
