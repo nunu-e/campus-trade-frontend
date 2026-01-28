@@ -1,5 +1,12 @@
 import axios from "axios";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { io } from "socket.io-client";
 import { useAuth } from "./AuthContext";
 
@@ -15,7 +22,8 @@ export const MessageProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
 
   const authAxios = useMemo(() => {
-    const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+    const API_BASE_URL =
+      process.env.REACT_APP_API_URL || "http://localhost:5000";
     return axios.create({
       baseURL: API_BASE_URL,
       headers: {
@@ -45,16 +53,19 @@ export const MessageProvider = ({ children }) => {
   }, [authAxios]);
 
   useEffect(() => {
-    if (!user?.token) return;
+    // Only initialize messaging for logged-in, verified users
+    if (!user?.token || !user?.isVerified) return;
 
     // Socket.IO accepts http/https URLs, not ws/wss
     // Use explicit WS URL if provided, otherwise fall back to API URL
     const socketUrl =
-      process.env.REACT_APP_WS_URL || process.env.REACT_APP_API_URL || "http://localhost:5000";
-    
+      process.env.REACT_APP_WS_URL ||
+      process.env.REACT_APP_API_URL ||
+      "http://localhost:5000";
+
     // Convert wss:// to https:// and ws:// to http:// for Socket.IO
-    const normalizedUrl = socketUrl.replace(/^wss?:\/\//, (match) => 
-      match === 'wss://' ? 'https://' : 'http://'
+    const normalizedUrl = socketUrl.replace(/^wss?:\/\//, (match) =>
+      match === "wss://" ? "https://" : "http://",
     );
 
     const newSocket = io(normalizedUrl, {
@@ -109,7 +120,7 @@ export const MessageProvider = ({ children }) => {
       newSocket.off("notification", handleNotification);
       newSocket.disconnect();
     };
-  }, [user?.token, authAxios, loadConversations, loadUnreadCount]);
+  }, [user?.token, user?.isVerified, authAxios, loadConversations, loadUnreadCount]);
 
   const fetchConversationMessages = async (userId) => {
     try {
