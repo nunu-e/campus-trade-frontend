@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 
 const MessagesPage = () => {
   const [selectedConversation, setSelectedConversation] = useState(null);
+  const [loading, setLoading] = useState(false);
   const { isVerified } = useAuth();
 
   const handleSelectConversation = (conversation) => {
