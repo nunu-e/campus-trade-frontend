@@ -48,8 +48,9 @@ export const MessageProvider = ({ children }) => {
     if (!user?.token) return;
 
     // Socket.IO accepts http/https URLs, not ws/wss
-    // It will automatically use the correct protocol (ws/wss) internally
-    const socketUrl = process.env.REACT_APP_WS_URL || "http://localhost:5000";
+    // Use explicit WS URL if provided, otherwise fall back to API URL
+    const socketUrl =
+      process.env.REACT_APP_WS_URL || process.env.REACT_APP_API_URL || "http://localhost:5000";
     
     // Convert wss:// to https:// and ws:// to http:// for Socket.IO
     const normalizedUrl = socketUrl.replace(/^wss?:\/\//, (match) => 
