@@ -19,11 +19,7 @@ const TransactionsPage = () => {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("all");
 
-  useEffect(() => {
-    fetchTransactions();
-  }, [activeTab]);
-
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     try {
       setLoading(true);
       const data = await transactionAPI.getMyTransactions();
@@ -51,7 +47,11 @@ const TransactionsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab]);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
 
   const getTransactionStats = () => {
     const stats = {

@@ -49,7 +49,7 @@ const VerifyEmail = () => {
     return () => {
       isMounted = false;
     };
-  }, [code]);
+  }, [code, navigate, verifyEmail]);
 
   const handleResendVerification = async (e) => {
     e?.preventDefault();
