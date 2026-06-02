@@ -5,9 +5,9 @@ import {
   Routes,
 } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
+import VerifyOTP from "./components/auth/VerifyOTP";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { MessageProvider } from "./context/MessageContext";
-
 // Components
 import VerifyEmail from "./components/auth/VerifyEmail";
 import Footer from "./components/common/Footer";
@@ -18,14 +18,18 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 // Pages
 import ListingForm from "./components/listings/ListingForm";
 import TransactionDetail from "./components/transactions/TransactionDetail";
+import AboutPage from "./pages/AboutPage";
 import AdminPage from "./pages/AdminPage";
+import FAQPage from "./pages/FAQPage";
 import HomePage from "./pages/HomePage";
 import ListingPage from "./pages/ListingPage";
 import LoginPage from "./pages/LoginPage";
 import MarketplacePage from "./pages/MarketplacePage";
 import MessagesPage from "./pages/MessagesPage";
+import PrivacyPage from "./pages/PrivacyPage";
 import ProfilePage from "./pages/ProfilePage";
 import RegisterPage from "./pages/RegisterPage";
+import TermsPage from "./pages/TermsPage";
 import TransactionsPage from "./pages/TransactionsPage";
 
 // ✅ Protected Route (auth only)
@@ -53,7 +57,7 @@ const VerifiedRoute = ({ children }) => {
 
   if (!isVerified) {
     // Store redirect info in sessionStorage for toast display
-    sessionStorage.setItem('verification_required', 'true');
+    sessionStorage.setItem("verification_required", "true");
     return <Navigate to="/profile" replace />;
   }
 
@@ -75,6 +79,11 @@ function App() {
                 <Route path="/marketplace" element={<MarketplacePage />} />
                 <Route path="/listing/:id" element={<ListingPage />} />
                 <Route path="/verify/:code" element={<VerifyEmail />} />
+                <Route path="/verify-otp" element={<VerifyOTP />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/faq" element={<FAQPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
                 <Route
                   path="/forgot-password"
                   element={<ForgotPasswordPage />}

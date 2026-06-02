@@ -42,23 +42,52 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       const response = await api.post("/api/auth/register", userData);
 
-      if (response.data && response.data.data) {
-        const userObj = response.data.data;
-        // ensure token is top-level on stored object
-        userObj.token = userObj.token || response.data.data.token;
-
-        localStorage.setItem("user", JSON.stringify(userObj));
-        setUser(userObj);
-        setupApiHeaders(userObj.token);
-
+      if (response.data && response.data.success) {
+        // Do NOT store user or token – verification required first
+        // Optionally store email for OTP page
+        localStorage.setItem("pendingVerificationEmail", userData.email);
         toast.success(
-          "Registration successful! Please check your email for verification.",
+          response.data.message ||
+            "Registration successful! Please verify your email.",
         );
-        return { success: true };
+        return { success: true, email: userData.email };
+      } else {
+        const message = response.data?.message || "Registration failed";
+        setError(message);
+        toast.error(message);
+        return { success: false, error: message };
       }
     } catch (error) {
       const message = error.response?.data?.message || "Registration failed";
       setError(message);
+      toast.error(message);
+      return { success: false, error: message };
+    } finally {
+      setLoading(false);
+    }
+  };
+  const verifyOTP = async (email, otp) => {
+    try {
+      setLoading(true);
+      const response = await api.post("/api/auth/verify-otp", { email, otp });
+
+      if (response.data && response.data.success) {
+        const userData = {
+          ...response.data.user,
+          token: response.data.token,
+        };
+        localStorage.setItem("user", JSON.stringify(userData));
+        localStorage.removeItem("pendingVerificationEmail");
+        setUser(userData);
+        setupApiHeaders(response.data.token);
+        toast.success("Email verified! You are now logged in.");
+        return { success: true, user: userData };
+      } else {
+        toast.error(response.data?.message || "Verification failed");
+        return { success: false, error: response.data?.message };
+      }
+    } catch (error) {
+      const message = error.response?.data?.message || "Verification failed";
       toast.error(message);
       return { success: false, error: message };
     } finally {

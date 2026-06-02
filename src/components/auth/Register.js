@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Alert, Button, Card, Container, Form } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 
 const Register = () => {
@@ -111,24 +112,21 @@ const Register = () => {
       const result = await register(registrationData);
 
       if (result.success) {
-        // Show success message with email info
-        const message = result.message || "Registration successful! Please check your email for verification.";
-        
-        // In development mode, show the verification link if available
-        if (result.data?.verificationLink) {
-          alert(
-            `${message}\n\nDevelopment Mode - Verification Link:\n${result.data.verificationLink}`
-          );
-        } else {
-          alert(message);
-        }
-        
-        navigate("/login");
+        // Store email for OTP verification (in case user navigates away)
+        localStorage.setItem("pendingVerificationEmail", formData.email);
+        toast.success(
+          result.message ||
+            "Registration successful! Check your email for the OTP.",
+        );
+        // Redirect to OTP verification page
+        navigate("/verify-otp", { state: { email: formData.email } });
       } else {
         setApiError(result.error || "Registration failed");
+        toast.error(result.error || "Registration failed");
       }
     } catch (error) {
       setApiError("An error occurred during registration");
+      toast.error("An error occurred during registration");
       console.error("Registration error:", error);
     } finally {
       setLoading(false);
@@ -150,8 +148,9 @@ const Register = () => {
               {apiError && <Alert variant="danger">{apiError}</Alert>}
 
               <Alert variant="info">
-                <strong>Important:</strong> A verification link will be sent to
-                your email. You must verify your email before you can login.
+                <strong>Important:</strong> After registration, you'll receive a
+                6-digit verification code via email. You must verify your email
+                before you can log in.
               </Alert>
 
               <Form onSubmit={handleSubmit}>
@@ -184,7 +183,7 @@ const Register = () => {
                     {errors.email}
                   </Form.Control.Feedback>
                   <Form.Text className="text-muted">
-                    We'll send a verification link to this email
+                    We'll send a 6-digit verification code to this email
                   </Form.Text>
                 </Form.Group>
 

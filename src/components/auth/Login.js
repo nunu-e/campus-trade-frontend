@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Alert, Button, Card, Container, Form } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 
 const Login = () => {
@@ -52,6 +53,14 @@ const Login = () => {
 
     if (result.success) {
       navigate("/");
+    } else if (result.needsVerification) {
+      // User exists but email not verified - redirect to OTP page
+      toast.warning(
+        "Please verify your email first. Check your inbox for the OTP.",
+      );
+      navigate("/verify-otp", { state: { email: formData.email } });
+    } else {
+      toast.error(result.message || "Login failed");
     }
 
     setLoading(false);

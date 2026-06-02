@@ -5,8 +5,25 @@ import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import { listingAPI } from "../../services/api";
 
+// Map frontend category to backend enum
+const categoryMap = {
+  Sell: "Goods",
+  Rent: "Rentals",
+  Service: "Services",
+};
+
+// Helper: convert file to base64 string
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+};
+
 const ListingForm = () => {
-  const { id } = useParams(); // for editing
+  const { id } = useParams();
   const navigate = useNavigate();
   const { user, isVerified } = useAuth();
 
@@ -14,15 +31,14 @@ const ListingForm = () => {
     title: "",
     description: "",
     price: "",
-    rentalPeriod: "Daily",
     images: [],
-    category: "",
+    category: "", // "Sell", "Rent", "Service"
     subcategory: "",
     location: "",
     condition: "",
     serviceType: "",
-    rentalStart: "",
-    rentalEnd: "",
+    rentalDuration: "",
+    rentalUnit: "Day",
   });
 
   const [loading, setLoading] = useState(false);
@@ -34,15 +50,23 @@ const ListingForm = () => {
       setFetching(true);
       const response = await listingAPI.getById(id);
       const data = response && response.data ? response.data : response;
+      let frontendCategory = "";
+      if (data.category === "Goods") frontendCategory = "Sell";
+      else if (data.category === "Rentals") frontendCategory = "Rent";
+      else if (data.category === "Services") frontendCategory = "Service";
+
       setListing({
         title: data.title || "",
         description: data.description || "",
         price: data.price || "",
-        rentalPeriod: data.rentalPeriod || "Daily",
-        images: data.images || [],
-        category: data.category || "",
+        images: data.images || [], // existing base64 strings for editing
+        category: frontendCategory,
         subcategory: data.subcategory || "",
         location: data.location || "",
+        condition: data.condition || "",
+        serviceType: data.serviceType || "",
+        rentalDuration: data.rentalPeriod?.duration || "",
+        rentalUnit: data.rentalPeriod?.unit || "Day",
       });
     } catch (err) {
       setError("Failed to load listing for editing");
@@ -52,13 +76,13 @@ const ListingForm = () => {
   }, [id]);
 
   useEffect(() => {
-    // only fetch when editing an existing listing (id should be a real id, not the literal 'new')
     if (id && id !== "new") fetchListing();
   }, [id, fetchListing]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === "images") {
+      // Store File objects temporarily
       setListing((prev) => ({ ...prev, images: [...files] }));
     } else {
       setListing((prev) => ({ ...prev, [name]: value }));
@@ -80,47 +104,63 @@ const ListingForm = () => {
     try {
       setLoading(true);
 
-      // Prepare payload as JSON. Backend expects images array; file upload isn't configured here.
+      const backendCategory = categoryMap[listing.category];
+      if (!backendCategory) {
+        throw new Error("Please select a valid category (Sell, Rent, Service)");
+      }
+
+      // --- Convert images to base64 ---
+      let imageBase64Array = [];
+      if (listing.images && listing.images.length > 0) {
+        const firstItem = listing.images[0];
+        // If the first item is a string starting with "data:image", it's already base64 (editing case)
+        if (
+          typeof firstItem === "string" &&
+          firstItem.startsWith("data:image")
+        ) {
+          imageBase64Array = listing.images;
+        } else {
+          // Convert File objects to base64
+          const files = Array.from(listing.images);
+          imageBase64Array = await Promise.all(files.map(fileToBase64));
+        }
+      } else if (!id) {
+        throw new Error("At least one image is required");
+      }
+
+      // Build payload
       const payload = {
         title: listing.title,
         description: listing.description,
-        price: listing.price,
-        rentalPeriod: listing.rentalPeriod,
-        category: listing.category,
+        price: parseFloat(listing.price),
+        category: backendCategory,
         subcategory: listing.subcategory,
         location: listing.location,
-        images: [],
-        condition: listing.condition || undefined,
-        serviceType: listing.serviceType || undefined,
+        images: imageBase64Array,
+        condition: undefined,
+        serviceType: undefined,
+        rentalPeriod: undefined,
       };
 
-      // Validate category-specific fields
-      if (listing.category === "Goods" && !listing.condition) {
-        throw new Error("Condition is required for goods");
-      }
-
-      if (listing.category === "Services" && !listing.serviceType) {
-        throw new Error("Service type is required for services");
-      }
-
-      if (listing.category === "Rentals") {
-        if (!listing.rentalStart || !listing.rentalEnd) {
-          throw new Error(
-            "Rental start and end dates are required for rentals",
-          );
+      // Category‑specific fields
+      if (backendCategory === "Goods") {
+        if (!listing.condition)
+          throw new Error("Condition is required for goods");
+        payload.condition = listing.condition;
+      } else if (backendCategory === "Services") {
+        if (!listing.serviceType) throw new Error("Service type is required");
+        payload.serviceType = listing.serviceType;
+      } else if (backendCategory === "Rentals") {
+        if (!listing.rentalDuration || !listing.rentalUnit) {
+          throw new Error("Rental duration and unit are required");
         }
         payload.rentalPeriod = {
-          start: listing.rentalStart,
-          end: listing.rentalEnd,
+          duration: parseInt(listing.rentalDuration),
+          unit: listing.rentalUnit,
         };
       }
 
-      if (listing.images && listing.images.length > 0) {
-        // If File objects, use file names as placeholders; backend stores whatever is provided.
-        payload.images = Array.from(listing.images).map((f) => f.name || f);
-      }
-
-      if (id) {
+      if (id && id !== "new") {
         await listingAPI.update(id, payload);
         toast.success("Listing updated successfully!");
       } else {
@@ -129,7 +169,11 @@ const ListingForm = () => {
       }
       navigate("/marketplace");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to submit listing");
+      toast.error(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to submit listing",
+      );
     } finally {
       setLoading(false);
     }
@@ -147,9 +191,7 @@ const ListingForm = () => {
   return (
     <Container className="py-4">
       {error && <Alert variant="danger">{error}</Alert>}
-
-      <h3>{id ? "Edit Listing" : "Create New Listing"}</h3>
-
+      <h3>{id && id !== "new" ? "Edit Listing" : "Create New Listing"}</h3>
       <Form onSubmit={handleSubmit}>
         <Form.Group className="mb-3">
           <Form.Label>Title</Form.Label>
@@ -190,28 +232,18 @@ const ListingForm = () => {
         </Form.Group>
 
         <Form.Group className="mb-3">
-          <Form.Label>Rental Period</Form.Label>
+          <Form.Label>Category *</Form.Label>
           <Form.Select
-            name="rentalPeriod"
-            value={listing.rentalPeriod}
-            onChange={handleChange}
-          >
-            <option value="Daily">Daily</option>
-            <option value="Weekly">Weekly</option>
-            <option value="Monthly">Monthly</option>
-          </Form.Select>
-        </Form.Group>
-
-        <Form.Group className="mb-3">
-          <Form.Label>Category</Form.Label>
-          <Form.Control
-            type="text"
             name="category"
             value={listing.category}
             onChange={handleChange}
-            placeholder="Enter category"
             required
-          />
+          >
+            <option value="">Select category</option>
+            <option value="Sell">Sell (Goods)</option>
+            <option value="Rent">Rent (Items)</option>
+            <option value="Service">Offer a Service</option>
+          </Form.Select>
         </Form.Group>
 
         <Form.Group className="mb-3">
@@ -221,46 +253,29 @@ const ListingForm = () => {
             name="subcategory"
             value={listing.subcategory}
             onChange={handleChange}
-            placeholder="Enter subcategory"
+            placeholder="e.g., Electronics, Tutoring, Books"
             required
           />
         </Form.Group>
 
         <Form.Group className="mb-3">
           <Form.Label>Location</Form.Label>
-          <Form.Control
-            type="text"
+          <Form.Select
             name="location"
             value={listing.location}
             onChange={handleChange}
-            placeholder="Enter location"
             required
-          />
+          >
+            <option value="">Select campus location</option>
+            <option value="Main Campus">Main Campus</option>
+            <option value="Engineering Campus">Engineering Campus</option>
+            <option value="Science Campus">Science Campus</option>
+            <option value="Medical Campus">Medical Campus</option>
+            <option value="Other">Other</option>
+          </Form.Select>
         </Form.Group>
 
-        <Form.Group className="mb-4">
-          <Form.Label>Images</Form.Label>
-          <Form.Control
-            type="file"
-            name="images"
-            onChange={handleChange}
-            multiple
-            accept="image/*"
-          />
-          {listing.images?.length > 0 && (
-            <div className="mt-2">
-              <strong>Selected Images:</strong>
-              <ul>
-                {Array.from(listing.images).map((file, idx) => (
-                  <li key={idx}>{file.name || file}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </Form.Group>
-
-        {/* Conditional fields based on category */}
-        {listing.category === "Goods" && (
+        {listing.category === "Sell" && (
           <Form.Group className="mb-3">
             <Form.Label>Condition</Form.Label>
             <Form.Select
@@ -279,7 +294,7 @@ const ListingForm = () => {
           </Form.Group>
         )}
 
-        {listing.category === "Services" && (
+        {listing.category === "Service" && (
           <Form.Group className="mb-3">
             <Form.Label>Service Type</Form.Label>
             <Form.Control
@@ -287,45 +302,79 @@ const ListingForm = () => {
               name="serviceType"
               value={listing.serviceType}
               onChange={handleChange}
-              placeholder="e.g., Tutoring, Repair"
+              placeholder="e.g., Tutoring, Repair, Design"
               required
             />
           </Form.Group>
         )}
 
-        {listing.category === "Rentals" && (
-          <>
-            <Form.Group className="mb-3">
-              <Form.Label>Rental Start</Form.Label>
+        {listing.category === "Rent" && (
+          <Form.Group className="mb-3">
+            <Form.Label>Rental Duration</Form.Label>
+            <div className="d-flex gap-2">
               <Form.Control
-                type="date"
-                name="rentalStart"
-                value={listing.rentalStart}
+                type="number"
+                name="rentalDuration"
+                value={listing.rentalDuration}
                 onChange={handleChange}
+                placeholder="e.g., 1"
+                min="1"
+                style={{ width: "120px" }}
                 required
               />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Rental End</Form.Label>
-              <Form.Control
-                type="date"
-                name="rentalEnd"
-                value={listing.rentalEnd}
+              <Form.Select
+                name="rentalUnit"
+                value={listing.rentalUnit}
                 onChange={handleChange}
+                style={{ width: "120px" }}
                 required
-              />
-            </Form.Group>
-          </>
+              >
+                <option value="Day">Day(s)</option>
+                <option value="Week">Week(s)</option>
+                <option value="Month">Month(s)</option>
+              </Form.Select>
+            </div>
+            <Form.Text className="text-muted">
+              Example: 2 Weeks, 1 Month, 3 Days
+            </Form.Text>
+          </Form.Group>
         )}
 
-        <Button type="submit" variant="primary" disabled={loading}>
-          {loading ? (
-            <>Submitting...</>
-          ) : id ? (
-            "Update Listing"
-          ) : (
-            "Create Listing"
+        <Form.Group className="mb-4">
+          <Form.Label>Images</Form.Label>
+          <Form.Control
+            type="file"
+            name="images"
+            onChange={handleChange}
+            multiple
+            accept="image/*"
+            required={!id}
+          />
+          {listing.images?.length > 0 && (
+            <div className="mt-2">
+              <strong>Selected Images:</strong>
+              <ul>
+                {Array.from(listing.images).map((img, idx) => (
+                  <li key={idx}>
+                    {typeof img === "string" && img.startsWith("data:image")
+                      ? "Image (base64)"
+                      : img.name || "Image"}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
+          <Form.Text className="text-muted">
+            Supported formats: JPG, PNG, GIF, WEBP. Images are stored as base64.
+          </Form.Text>
+        </Form.Group>
+
+        <Button type="submit" variant="primary" disabled={loading}>
+          {loading
+            ? "Submitting..."
+            : id && id !== "new"
+              ? "Update Listing"
+              : "Create Listing"}
         </Button>
       </Form>
     </Container>

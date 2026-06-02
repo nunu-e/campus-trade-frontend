@@ -65,17 +65,17 @@ const Footer = () => {
               </li>
               <li className="mb-2">
                 <FaEnvelope className="me-2" />
-                <a 
-                  href="mailto:ambachewelbethe7@gmail.com" 
+                <a
+                  href="mailto:ambachewelbethel7@gmail.com"
                   className="text-light text-decoration-none"
                 >
-                  ambachewelbethe7@gmail.com
+                  ambachewelbethel7@gmail.com
                 </a>
               </li>
               <li className="mb-2">
                 <FaPhone className="me-2" />
-                <a 
-                  href="tel:+251965075087" 
+                <a
+                  href="tel:+251965075087"
                   className="text-light text-decoration-none"
                 >
                   +251965075087
@@ -94,8 +94,7 @@ const Footer = () => {
               University. All rights reserved.
             </p>
             <p className="text-muted mb-0">
-              This platform is exclusively for AAU students with valid
-              @aau.edu.et email addresses.
+              This platform is exclusively for AAU students
             </p>
           </Col>
         </Row>
