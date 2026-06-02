@@ -66,6 +66,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
+  // eslint-disable-next-line no-unused-vars
   const verifyOTP = async (email, otp) => {
     try {
       setLoading(true);
