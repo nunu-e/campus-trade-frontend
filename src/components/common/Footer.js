@@ -66,10 +66,10 @@ const Footer = () => {
               <li className="mb-2">
                 <FaEnvelope className="me-2" />
                 <a
-                  href="mailto:ambachewelbethel7@gmail.com"
+                  href="mailto:elbethelambachew2@gmail.com"
                   className="text-light text-decoration-none"
                 >
-                  ambachewelbethel7@gmail.com
+                  elbethelambachew2@gmail.com
                 </a>
               </li>
               <li className="mb-2">
